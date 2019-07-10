@@ -35,6 +35,7 @@ FPcache& fpCache::getCache()
 {
 	return cache;
 }
+//_item ÊÇ·ñÔÚ
 bool fpCache::isItemInCache(Item _item) {
 	auto cit = cache.begin();
 	while (cit!= cache.end())

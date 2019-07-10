@@ -257,13 +257,27 @@ fpCache & FPCache::getLowCorrCache()
 void FPCache::cacheOrganize()
 {
 	auto it = highCorrCache.getShadowCache().begin();
-	/*while (it != highCorrCache.getShadowCache().end())
+	//标记在cache中的items
+	auto findcacheit = highCorrCache.getCache().begin();
+	//遍历cache
+	while (findcacheit != highCorrCache.getCache().end())
 	{
-		if (highCorrCache.isItemInCache(it->first)) {
-			it->second = 1;
+		//ShadowCache中存在这个item
+		if (highCorrCache.getShadowCache().find((*findcacheit)) != highCorrCache.getShadowCache().end())
+		{
+			highCorrCache.getShadowCache()[(*findcacheit)] = 1;
+			findcacheit++;
 		}
-		it++;
-	}*/
+		else//ShadowCache中不存在这个item
+		{
+			//擦掉，这里有一个问题，如果，迭代器指向倒数第一个元素，在此处erase，那么将指向end()
+			//随后的迭代器自加后将导致错误。
+			//.erase()函数返回值是其后的元素指针，即是.erase(findcacheit)==findcacheit++；
+			highCorrCache.getCache().erase(findcacheit);
+			//findcacheit++;
+		}
+		
+	}
 	//在此标记shadowCache已经存在于Low缓存的items为1
 	it = lowCorrCache.getShadowCache().begin();
 	while (it != lowCorrCache.getShadowCache().end())
@@ -274,7 +288,7 @@ void FPCache::cacheOrganize()
 		it++;
 	}
 
-	highCorrCache.clear();
+	//整理high cache
 	it = highCorrCache.getShadowCache().begin();
 	while (it!= highCorrCache.getShadowCache().end())
 	{
@@ -286,16 +300,20 @@ void FPCache::cacheOrganize()
 		it++;
 	}
 	it = lowCorrCache.getShadowCache().begin();
-
-	lowCorrCache.clear();//清空low
+	
+	//清空low
+	lowCorrCache.clear();
 	while (it != lowCorrCache.getShadowCache().end())
 	{
-		if ((*it).second == 1) {//原来存在于low缓存中的
+		//原来存在于low缓存中的
+		if ((*it).second == 1) {
 			setLowCorrCacheItem((*it).first);
 		}
-		if ((*it).second == 0&&lruCache.find((*it).first)!= lruCache.end())//原来并不在low缓存但是在lru中发现了
+		//原来并不在low缓存但是在lru中发现了
+		if ((*it).second == 0&&lruCache.find((*it).first)!= lruCache.end())
 		{
-			setLowCorrCacheItem((*it).first);//调入
+			//调入
+			setLowCorrCacheItem((*it).first);
 			(*it).second = 1;
 		}
 		it++;

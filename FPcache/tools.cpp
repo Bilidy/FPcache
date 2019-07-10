@@ -13,12 +13,14 @@
 #include <set>
 #include "lru.hpp"
 #include "fpcache.hpp"
+
 using Item = std::string;
 using Transaction = std::vector<Item>;
+
 #define ARGS_BUFFER_SIZE 101
 #define COMM_BUFFER_SIZE 11
 #define COMM_ARGS_BUFFER_SIZE 91
-#define DEFAULT_SUPPORT 2;
+#define DEFAULT_SUPPORT 10;
 
 
 
@@ -161,6 +163,7 @@ size_t highSizeWeight = 0.2;
 size_t lowSizeWeight = 0.2;
 size_t lruSizeWeight = 0.6;
 size_t logSize = 1000;
+size_t blankSize = 1000;
 
 bool needRebuild = true;
 
@@ -176,7 +179,7 @@ void drive_machine() {
 		memset(args_buffer, 0, ARGS_BUFFER_SIZE);
 		memset(comm_buffer, 0, COMM_BUFFER_SIZE);
 		memset(comm_args_buffer, 0, COMM_ARGS_BUFFER_SIZE);
-		std::cin.getline(args_buffer, ARGS_BUFFER_SIZE - 1);
+		std::cin.getline(args_buffer, ARGS_BUFFER_SIZE );
 
 		if (!get_command(args_buffer, ARGS_BUFFER_SIZE, comm_buffer, COMM_BUFFER_SIZE, comm_args_buffer, COMM_ARGS_BUFFER_SIZE)) {
 			printf("bad args\n");
@@ -227,7 +230,7 @@ void drive_machine() {
 					cout <<"fpcache> file path:"<< (*it).second << endl;
 					//transactions((*it).second,_transactions);
 				}
-				//缓存方式的缓存大小。
+				//指定缓存方式的缓存大小。
 				else if ("-r" == (*it).first) {
 									
 					if (stor((*it).second, room)) {
@@ -260,7 +263,7 @@ void drive_machine() {
 				else if ("-U" == (*it).first) {
 					if (stor((*it).second, lruSizeWeight)) {
 						cout << "fpcache> LRU weight:" << lruSizeWeight << endl;
-					}
+					} 
 					else
 					{
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
@@ -275,12 +278,21 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if (("-b" == (*it).first)) {
+					if (stor((*it).second, blankSize)) {
+						cout << "fpcache> blank size:" << blankSize << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
 				it++;
 			}
 
 			
 			/*
-				fpcache -r 50 -p transactions.txt -s 15 -H 3 -L 1 -U 6 -l 1000
+				fpcache -r 50 -p transactions.txt -s 15 -H 3 -L 1 -U 6 -l 1000 -b 2000
 			*/
 			if (needRebuild)//无需重建
 			{
@@ -296,8 +308,10 @@ void drive_machine() {
 			fpCache.setMinSupport(sup);
 			std::set<Pattern> patterns;
 			fpCache.setMaxLogSize(logSize);
+
 			int64_t counter = 0;
-			
+			int64_t blankCounter = 0;
+
 			auto transIt = _transactions.begin();
 			while (transIt != _transactions.end())
 			{
@@ -311,9 +325,15 @@ void drive_machine() {
 
 					itemsIt++;
 				}
-
-				fpCache.appendLogTrans(*transIt);
-				counter++;
+				
+				if (blankSize> blankCounter){
+					blankCounter++;
+				}
+				else{
+					fpCache.appendLogTrans(*transIt);
+					counter++;
+				}
+				
 			/*********************************************************************/
 				if (counter >= fpCache.getMaxLogSize())
 				{
@@ -325,18 +345,28 @@ void drive_machine() {
 						fpCache.getHighCorrCache().getShadowCache(),
 						fpCache.getLowCorrCache().getShadowCache());
 					fpCache.cacheOrganize();
+
+					/***********************************************************/
+					cout << "ACC_NUM:" << fpCache.stateACC()
+						<< " HIT_NUM:" << fpCache.stateHIT()
+						<< " PAGE_FAULT_NUM:" << fpCache.stateFault()
+						<< "	hit ratio:" << ((float)fpCache.stateHIT() / fpCache.stateACC()) * 100 << "%" << endl;
+					/**********************************************************/
 					counter = 0;
+					blankCounter = 0;
 				}
 			/********************************************************************/
 
 
 				transIt++;
 			}
-			cout << "ACC_NUM:" << lruStack.stateACC() 
+			cout << "Total:\n" 
+				<< "ACC_NUM:" << lruStack.stateACC()
 				<< " HIT_NUM:" << lruStack.stateHIT()
 				<< " PAGE_FAULT_NUM:" << lruStack.stateFault() 
 				<< "	hit ratio:" <<((float)lruStack.stateHIT() / lruStack.stateACC()) * 100 << "%" << endl;
-			cout << "ACC_NUM:" << fpCache.stateACC()
+			cout 
+				<< "ACC_NUM:" << fpCache.stateACC()
 				<< " HIT_NUM:" << fpCache.stateHIT()
 				<< " PAGE_FAULT_NUM:" << fpCache.stateFault() 
 				<< "	hit ratio:" <<((float)fpCache.stateHIT() /fpCache.stateACC())*100<<"%" << endl;
