@@ -332,7 +332,7 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, _transactions, temptrans, 5000, 0.2);
+			uniAccess(lruStack, fpCache, _transactions, temptrans, 10000, 0.1);
 			//auto transIt = _transactions.begin();
 			//while (transIt != _transactions.end())
 			//{
@@ -382,17 +382,9 @@ void drive_machine() {
 			//	transIt++;
 			//}
 
-
-			cout << "Total:\n" 
-				<< "LRU: ACC_NUM:" << lruStack.stateACC()
-				<< " HIT_NUM:" << lruStack.stateHIT()
-				<< " PAGE_FAULT_NUM:" << lruStack.stateFault() 
-				<< "	hit ratio:" <<((float)lruStack.stateHIT() / lruStack.stateACC()) * 100 << "%" << endl;
-			cout 
-				<< "FPC: ACC_NUM:" << fpCache.stateACC()
-				<< " HIT_NUM:" << fpCache.stateHIT()
-				<< " PAGE_FAULT_NUM:" << fpCache.stateFault() 
-				<< "	hit ratio:" <<((float)fpCache.stateHIT() /fpCache.stateACC())*100<<"%" << endl;
+			cout <<"Total:\n"<< fpCache << endl;
+			cout << lruStack << endl;
+			
 			lruStack.flush();
 /******************************************************************************************************************************/
 /******************************************************************************************************************************/

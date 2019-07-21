@@ -110,6 +110,19 @@ bool LRUStack::evict(Item _it)
 	}
 }
 
+bool LRUStack::evict(int _num)
+{
+	if (_num>stacksize)
+	{
+		return false;
+	}
+	for (size_t i = 0; i < _num; i++)
+	{
+		evict();
+	}
+	return false;
+}
+
 bool LRUStack::pageFault(Item _item)
 {
 	PAGE_FAULT_NUM++;

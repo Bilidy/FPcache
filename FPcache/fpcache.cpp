@@ -190,6 +190,24 @@ bool FPCache::resizeLowCorrCache()
 	return false;
 }
 
+bool FPCache::resizeLRU()
+{
+	size_t lrusize = maxszie - highCorrCache.getCacheSize()-lowCorrCache.getCacheSize();
+
+	if (lrusize<lruCache.getCacheSize())
+	{
+		if (lruCache.evict(lruCache.getCacheSize() - lrusize)) {
+			return true;
+		}
+		return false;
+	}
+	else
+	{
+		lruCache.setMaxSize(lrusize);
+	}
+	return true;
+}
+
 void FPCache::access(Item _item)
 {
 	ACC_NUM++;
@@ -318,6 +336,7 @@ void FPCache::cacheOrganize()
 		}
 		it++;
 	}
+	resizeLRU();
 }
 uint64_t FPCache::stateACC()
 {

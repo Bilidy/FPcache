@@ -38,6 +38,13 @@ private:
 	uint64_t lruCacheMaxSize;
 
 	uint64_t minimum_support_threshold;
+	friend std::ostream& operator<<(std::ostream&os, FPCache&fpc) {
+		os << "FPC:	ACC:" << fpc.stateACC()
+			<< " HIT:" << fpc.stateHIT()
+			<< " FAULT:" << fpc.stateFault()
+			<< "	hit ratio:" << ((float)fpc.stateHIT() / fpc.stateACC()) * 100 << "%";
+		return os;
+	}
 
 public:
 	FPCache(size_t maxszie, float _highScaleWeight, float _lowScaleWeight, float _lruScaleWeight);
@@ -84,6 +91,7 @@ public:
 	//risize cache dynamicly
 	bool resizeHighCorrCache();
 	bool resizeLowCorrCache();
+	bool resizeLRU();
 	
 	//access the Item
 	void access(Item _item);
