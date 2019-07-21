@@ -24,13 +24,13 @@ FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lowScaleWeight,
 	PAGE_FAULT_NUM = 0;
 }
 
-bool FPCache::runFPAnalyse(std::set<Pattern>& patterns)
+bool FPCache::runFPAnalyse(std::vector<Transaction> _accLog,std::set<Pattern>& patterns)
 {
-	if (accLog.size())
+	if (_accLog.size())
 	{
-		const FPTree fptree{ accLog, minimum_support_threshold };
+		const FPTree fptree{ _accLog, minimum_support_threshold };
 		patterns = fptree_growth(fptree);
-		accLog.clear();
+		_accLog.clear();
 		return true;
 	}
 	else

@@ -141,10 +141,10 @@ void transactions(const string src_path, std::vector<Transaction> &transactions)
 		getline(fin, str);
 		if (str == "")
 		{
-			break;
+			continue;
 		}
-		split(str, '	', _substr);
-		split(_substr[1], ',', trans);
+		//split(str, '	', _substr);
+		split(str, ' ', trans);
 		transactions.push_back(trans);
 	}
 	fin.close();

@@ -121,6 +121,7 @@
     <ClCompile Include="lru.cpp" />
     <ClCompile Include="tools.cpp" />
     <ClCompile Include="transactions.cpp" />
+    <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cache.h" />
@@ -129,6 +130,7 @@
     <ClInclude Include="fptree.hpp" />
     <ClInclude Include="lru.hpp" />
     <ClInclude Include="transactions.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

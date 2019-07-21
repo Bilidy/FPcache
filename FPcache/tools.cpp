@@ -8,11 +8,15 @@
 #include <fstream>
 #include <map>
 #include <vector>
+#include <iostream>  
+
+
+
 
 #include "transactions.h"
 #include <set>
-#include "lru.hpp"
-#include "fpcache.hpp"
+
+#include "util.h"
 
 using Item = std::string;
 using Transaction = std::vector<Item>;
@@ -157,6 +161,7 @@ size_t sup = DEFAULT_SUPPORT;
 string filepath;
 
 std::vector<Transaction> _transactions;
+std::vector<Transaction> _temptransactions;
 
 size_t room;
 size_t highSizeWeight = 0.2;
@@ -278,6 +283,7 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				//blank size 空白地方大小
 				else if (("-b" == (*it).first)) {
 					if (stor((*it).second, blankSize)) {
 						cout << "fpcache> blank size:" << blankSize << endl;
@@ -289,12 +295,20 @@ void drive_machine() {
 				}
 				it++;
 			}
-
-			
+/******************************************************************************************************************************/
+/******************************************************************************************************************************/
 			/*
 				fpcache -r 50 -p transactions.txt -s 15 -H 3 -L 1 -U 6 -l 1000 -b 2000
+				fpcache -r 1000 -p kosarak.dat -s 15 -H 5 -L 0 -U 5 -l 1000 -b 9000
+				fpcache -r 1000 -p kosarak.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
+				fpcache -r 200 -p T40I10D100K.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
+				fpcache -r 200 -p retail.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
+				fpcache -r 200 -p T10I4D100K.dat -s 20 -H 2 -L 0 -U 8 -l 2000 -b 4000
+				T10I4D100K
+				T40I10D100K
+				retail
 			*/
-			if (needRebuild)//无需重建
+			if (needRebuild)//需重建
 			{
 				transactions(filepath, _transactions);
 				if (0 == _transactions.size())
@@ -302,77 +316,86 @@ void drive_machine() {
 					cout << "fpcache> transactions can't be read ,please check the file:" << filepath << endl;
 				}
 			}
+
+
+
+
 			LRUStack lruStack(room);
 			
 			FPCache fpCache(room,highSizeWeight, lowSizeWeight,lruSizeWeight);
 			fpCache.setMinSupport(sup);
-			std::set<Pattern> patterns;
+			//std::set<Pattern> patterns;
 			fpCache.setMaxLogSize(logSize);
+
+			std::vector<Transaction> temptrans;
 
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			auto transIt = _transactions.begin();
-			while (transIt != _transactions.end())
-			{
-				auto itemsIt = (*transIt).begin();
-				while (itemsIt != (*transIt).end())
-				{
+			uniAccess(lruStack, fpCache, _transactions, temptrans, 5000, 0.2);
+			//auto transIt = _transactions.begin();
+			//while (transIt != _transactions.end())
+			//{
+			//	auto itemsIt = (*transIt).begin();
+			//	while (itemsIt != (*transIt).end())
+			//	{
 
-					lruStack.access(*itemsIt);
+			//		lruStack.access(*itemsIt);
 
-					fpCache.access(*itemsIt);
+			//		fpCache.access(*itemsIt);
 
-					itemsIt++;
-				}
-				
-				if (blankSize> blankCounter){
-					blankCounter++;
-				}
-				else{
-					fpCache.appendLogTrans(*transIt);
-					counter++;
-				}
-				
-			/*********************************************************************/
-				if (counter >= fpCache.getMaxLogSize())
-				{
-					//此括号内为计算和调整fpcache 的代码块
-					vector<Pattern> sortedPatterns;
-					fpCache.runFPAnalyse(patterns);
-					fpCache.sortPatternsBySup(sortedPatterns, patterns);
-					fpCache.procPattern(sortedPatterns,
-						fpCache.getHighCorrCache().getShadowCache(),
-						fpCache.getLowCorrCache().getShadowCache());
-					fpCache.cacheOrganize();
+			//		itemsIt++;
+			//	}
+			//	
+			//	if (blankSize> blankCounter){
+			//		blankCounter++;
+			//	}
+			//	else{
+			//		fpCache.appendLogTrans(*transIt);
+			//		counter++;
+			//	}
+			//	
+			///*********************************************************************/
+			//	if (counter >= fpCache.getMaxLogSize())
+			//	{
+			//		//此括号内为计算和调整fpcache 的代码块
+			//		vector<Pattern> sortedPatterns;
+			//		fpCache.runFPAnalyse(fpCache.getLog(),patterns);
+			//		fpCache.sortPatternsBySup(sortedPatterns, patterns);
+			//		fpCache.procPattern(sortedPatterns,
+			//			fpCache.getHighCorrCache().getShadowCache(),
+			//			fpCache.getLowCorrCache().getShadowCache());
+			//		fpCache.cacheOrganize();
 
-					/***********************************************************/
-					cout << "ACC_NUM:" << fpCache.stateACC()
-						<< " HIT_NUM:" << fpCache.stateHIT()
-						<< " PAGE_FAULT_NUM:" << fpCache.stateFault()
-						<< "	hit ratio:" << ((float)fpCache.stateHIT() / fpCache.stateACC()) * 100 << "%" << endl;
-					/**********************************************************/
-					counter = 0;
-					blankCounter = 0;
-				}
-			/********************************************************************/
+			//		/***********************************************************/
+			//		cout << "ACC_NUM:" << fpCache.stateACC()
+			//			<< " HIT_NUM:" << fpCache.stateHIT()
+			//			<< " PAGE_FAULT_NUM:" << fpCache.stateFault()
+			//			<< "	hit ratio:" << ((float)fpCache.stateHIT() / fpCache.stateACC()) * 100 << "%" << endl;
+			//		/**********************************************************/
+			//		counter = 0;
+			//		blankCounter = 0;
+			//	}
+			///********************************************************************/
 
 
-				transIt++;
-			}
+			//	transIt++;
+			//}
+
+
 			cout << "Total:\n" 
-				<< "ACC_NUM:" << lruStack.stateACC()
+				<< "LRU: ACC_NUM:" << lruStack.stateACC()
 				<< " HIT_NUM:" << lruStack.stateHIT()
 				<< " PAGE_FAULT_NUM:" << lruStack.stateFault() 
 				<< "	hit ratio:" <<((float)lruStack.stateHIT() / lruStack.stateACC()) * 100 << "%" << endl;
 			cout 
-				<< "ACC_NUM:" << fpCache.stateACC()
+				<< "FPC: ACC_NUM:" << fpCache.stateACC()
 				<< " HIT_NUM:" << fpCache.stateHIT()
 				<< " PAGE_FAULT_NUM:" << fpCache.stateFault() 
 				<< "	hit ratio:" <<((float)fpCache.stateHIT() /fpCache.stateACC())*100<<"%" << endl;
 			lruStack.flush();
-
-
+/******************************************************************************************************************************/
+/******************************************************************************************************************************/
 
 		}
 		else if (0 == strcmp(comm_buffer, "exit")) {
@@ -390,5 +413,31 @@ void drive_machine() {
 
 int main()
 {
+	//int i = 0;
+	//int j = 0;
+	//int sum = 0;
+	//int	M = 5000;
+	//double rate = 0.2;
+	//while (i<(M*rate))
+	//{
+	//	sum += sampTheNext(2, rate, i, M);
+	//	cout <<"NO."<<i<<" "<< sum<<" ";
+	//	cout << sampTheNext(2, rate, i, M) << endl;
+	//	if (sampTheNext(2, rate, i, M)!=0)
+	//	{
+	//		j++;
+	//	}
+	//	i++;
+	//}
+	//cout << j << endl;
+	//for (size_t i = 0; i < 10; i++)
+	//{
+	//	int index = radmGen(0, 9 - i, 1);
+	//	cout << index << endl;
+	//	//slice.push_back(temptrans.at(index));
+	//	//temptrans.erase(temptrans.begin() + index);
+	//}
 	drive_machine();
+
+
 }

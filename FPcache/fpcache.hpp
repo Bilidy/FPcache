@@ -43,7 +43,7 @@ public:
 	FPCache(size_t maxszie, float _highScaleWeight, float _lowScaleWeight, float _lruScaleWeight);
 
 	//run FP-Growth analyse
-	bool runFPAnalyse(std::set<Pattern> &patterns);
+	bool runFPAnalyse(std::vector<Transaction> _accLog, std::set<Pattern>& patterns);
 	
 	void sortPatternsBySup(std::vector<Pattern>& sortedPatterns,std::set<Pattern>& patterns);
 
@@ -99,6 +99,10 @@ public:
 	fpCache& getHighCorrCache();
 
 	fpCache & getLowCorrCache();
+
+	std::vector<Transaction> &getLog() {
+		return accLog;
+	}
 
 	void cacheOrganize();
 
