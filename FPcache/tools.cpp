@@ -301,6 +301,7 @@ void drive_machine() {
 				fpcache -r 50 -p transactions.txt -s 15 -H 3 -L 1 -U 6 -l 1000 -b 2000
 				fpcache -r 1000 -p kosarak.dat -s 15 -H 5 -L 0 -U 5 -l 1000 -b 9000
 				fpcache -r 1000 -p kosarak.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
+				fpcache -r 800 -p kosarak.dat -s 19 -H 3 -L 0 -U 7
 				fpcache -r 200 -p T40I10D100K.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
 				fpcache -r 200 -p retail.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
 				fpcache -r 200 -p T10I4D100K.dat -s 20 -H 2 -L 0 -U 8 -l 2000 -b 4000
@@ -323,6 +324,7 @@ void drive_machine() {
 			LRUStack lruStack(room);
 			
 			FPCache fpCache(room,highSizeWeight, lowSizeWeight,lruSizeWeight);
+			ARCCache accCache(room);
 			fpCache.setMinSupport(sup);
 			//std::set<Pattern> patterns;
 			fpCache.setMaxLogSize(logSize);
@@ -332,7 +334,7 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, _transactions, temptrans, 10000, 0.1);
+			uniAccess(lruStack, fpCache, accCache, _transactions, temptrans, 10000, 0.1);
 			//auto transIt = _transactions.begin();
 			//while (transIt != _transactions.end())
 			//{
@@ -384,6 +386,7 @@ void drive_machine() {
 
 			cout <<"Total:\n"<< fpCache << endl;
 			cout << lruStack << endl;
+			cout << "ARC:	hit ratio:"; accCache.getHitRatio(); cout << endl;
 			
 			lruStack.flush();
 /******************************************************************************************************************************/
@@ -405,31 +408,5 @@ void drive_machine() {
 
 int main()
 {
-	//int i = 0;
-	//int j = 0;
-	//int sum = 0;
-	//int	M = 5000;
-	//double rate = 0.2;
-	//while (i<(M*rate))
-	//{
-	//	sum += sampTheNext(2, rate, i, M);
-	//	cout <<"NO."<<i<<" "<< sum<<" ";
-	//	cout << sampTheNext(2, rate, i, M) << endl;
-	//	if (sampTheNext(2, rate, i, M)!=0)
-	//	{
-	//		j++;
-	//	}
-	//	i++;
-	//}
-	//cout << j << endl;
-	//for (size_t i = 0; i < 10; i++)
-	//{
-	//	int index = radmGen(0, 9 - i, 1);
-	//	cout << index << endl;
-	//	//slice.push_back(temptrans.at(index));
-	//	//temptrans.erase(temptrans.begin() + index);
-	//}
 	drive_machine();
-
-
 }

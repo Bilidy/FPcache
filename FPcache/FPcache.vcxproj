@@ -115,6 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ARCCache.cpp" />
     <ClCompile Include="cache.cpp" />
     <ClCompile Include="fpcache.cpp" />
     <ClCompile Include="fptree.cpp" />
@@ -124,6 +125,7 @@
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ARCCache.h" />
     <ClInclude Include="cache.h" />
     <ClInclude Include="fpcache.hpp" />
     <ClInclude Include="fpgrowth.h" />

@@ -5,6 +5,7 @@
 #include "util.h"
 #include <math.h>
 #include"fpcache.hpp"
+#include <stdlib.h>
 #define WINDOW 10
 
 using std::cout;
@@ -49,12 +50,12 @@ double radmGen(size_t low, size_t high, double) {
 	return dis2(random);
 }
 
-void uniAccess(LRUStack& lru, 
-	FPCache&fpcahe, 
+void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	std::vector<Transaction>&transactions, 
 	std::vector<Transaction>&temptrans,
 	size_t M,
-	float rate) {
+	float rate) 
+{
 	temptrans.clear();
 	temptrans = transactions;
 	std::vector<Transaction> samplingTrans;
@@ -90,6 +91,7 @@ void uniAccess(LRUStack& lru,
 
 				lru.access(slice.at(index).at(itmIndex));//模拟访问
 				fpcahe.access(slice.at(index).at(itmIndex));//模拟访问
+				accache.ARCreference(stoi(slice.at(index).at(itmIndex)));
 
 				slice.at(index).erase(slice.at(index).begin() + itmIndex);//将此项从该事务中删除
 				//slice.at(index).shrink_to_fit();
@@ -128,7 +130,8 @@ void uniAccess(LRUStack& lru,
 
 						/***********************************************************/
 						cout << fpcahe << "	sample number:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
-						cout << lru <<"\n"<< endl;
+						cout << lru << endl;
+						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
 
 						samplingTrans.clear();
 						/**********************************************************/
@@ -149,7 +152,8 @@ void uniAccess(LRUStack& lru,
 
 						/***********************************************************/
 						cout << fpcahe <<  "	sample number:" << samplingTrans.size() <<"	【" <<((double)finishedCounter/totalsize)*100<<"%】"<<endl;
-						cout << lru << "\n" << endl;
+						cout << lru  << endl;
+						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
 
 						samplingTrans.clear();
 						/**********************************************************/
@@ -160,28 +164,6 @@ void uniAccess(LRUStack& lru,
 			};
 		}
 	}
-
-	//if (counter >= fpCache.getMaxLogSize())
-	//{
-	//	此括号内为计算和调整fpcache 的代码块
-		//vector<Pattern> sortedPatterns;
-		//fpCache.runFPAnalyse(fpCache.getLog(), patterns);
-		//fpCache.sortPatternsBySup(sortedPatterns, patterns);
-		//fpCache.procPattern(sortedPatterns,
-		//	fpCache.getHighCorrCache().getShadowCache(),
-		//	fpCache.getLowCorrCache().getShadowCache());
-		//fpCache.cacheOrganize();
-
-		///***********************************************************/
-		//cout << "ACC_NUM:" << fpCache.stateACC()
-		//	<< " HIT_NUM:" << fpCache.stateHIT()
-		//	<< " PAGE_FAULT_NUM:" << fpCache.stateFault()
-		//	<< "	hit ratio:" << ((float)fpCache.stateHIT() / fpCache.stateACC()) * 100 << "%" << endl;
-		///**********************************************************/
-		//counter = 0;
-		//blankCounter = 0;
-	//}
-
 }
 
 int sampTheNext(float a, float rate, size_t curr ,size_t M) {// M=m/r 

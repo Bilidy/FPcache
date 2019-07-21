@@ -17,7 +17,8 @@ FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lowScaleWeight,
 
 	highCorrCache.setMaxCacheSize(highCacheSize);
 	lowCorrCache.setMaxCacheSize(lowCacheSize);
-	lruCache.setMaxSize(_maxszie - highCacheSize - lowCacheSize);
+	//lruCache.setMaxSize(_maxszie - highCacheSize - lowCacheSize);
+	lruCache.setMaxSize(_maxszie);
 
 	ACC_NUM = 0;
 	HIT_NUM = 0;
