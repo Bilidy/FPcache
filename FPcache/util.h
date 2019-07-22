@@ -14,5 +14,6 @@ void uniAccess(LRUStack& lru,
 	std::vector<Transaction>&transactions,
 	std::vector<Transaction>&temptrans,
 	size_t M,
-	float rate);
+	float rate,
+	float a);
 #endif // !UTIL_H_

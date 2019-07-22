@@ -38,6 +38,7 @@ private:
 	uint64_t lruCacheMaxSize;
 
 	uint64_t minimum_support_threshold;
+	double min_sup_wet;
 	friend std::ostream& operator<<(std::ostream&os, FPCache&fpc) {
 		os << "FPC:	ACC:" << fpc.stateACC()
 			<< " HIT:" << fpc.stateHIT()
@@ -79,6 +80,8 @@ public:
 
 	//set the min support of FP-Growth
 	void setMinSupport(uint64_t _minimum_support_threshold);
+	void setMinSupportWet(double _min_sup_wet);
+	float getMinSupportWet();
 
 	//put item into cache
 	bool setHighCorrCacheItem(Item _item);

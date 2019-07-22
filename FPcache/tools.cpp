@@ -24,7 +24,7 @@ using Transaction = std::vector<Item>;
 #define ARGS_BUFFER_SIZE 101
 #define COMM_BUFFER_SIZE 11
 #define COMM_ARGS_BUFFER_SIZE 91
-#define DEFAULT_SUPPORT 10;
+#define DEFAULT_SUPPORT 0.02;
 
 
 
@@ -157,7 +157,7 @@ int get_command(char* _args_buffer, uint32_t _arg_buffersize, char* _comm_buffer
 	return 1;
 }
 
-size_t sup = DEFAULT_SUPPORT;
+double supWet = DEFAULT_SUPPORT;
 string filepath;
 
 std::vector<Transaction> _transactions;
@@ -168,7 +168,10 @@ size_t highSizeWeight = 0.2;
 size_t lowSizeWeight = 0.2;
 size_t lruSizeWeight = 0.6;
 size_t logSize = 1000;
+size_t samplenum = 1000;
 size_t blankSize = 1000;
+double samplingRate = 0.1;
+double alpha = 0.7;
 
 bool needRebuild = true;
 
@@ -209,8 +212,8 @@ void drive_machine() {
 				//-s 最小支持度参数，获取最小支持度。系统默认为2。
 				if ("-s" == (*it).first) {//support
 					//cout << "support:"<<(*it).second << endl;
-					if (stor((*it).second, sup)) {
-						cout << "fpcache> support:" << sup << endl;
+					if (supWet=atof((*it).second.c_str())) {
+						cout << "fpcache> support weight:" << supWet << endl;
 						break;
 					}
 					else
@@ -274,19 +277,27 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
-				else if ("-l" == (*it).first) {
-					if (stor((*it).second, logSize)) {
-						cout << "fpcache> Log size:" << logSize << endl;
+				else if ("-m" == (*it).first) {
+					if (stor((*it).second, samplenum)) {
+						cout << "fpcache> sample size:" << samplenum << endl;
 					}
 					else
 					{
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
-				//blank size 空白地方大小
-				else if (("-b" == (*it).first)) {
-					if (stor((*it).second, blankSize)) {
-						cout << "fpcache> blank size:" << blankSize << endl;
+				else if (("-R" == (*it).first)) {
+					if (samplingRate=atof((*it).second.c_str())) {
+						cout << "fpcache> sampling rate:" << samplingRate << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if (("-a" == (*it).first)) {
+					if (alpha = atof((*it).second.c_str())) {
+						cout << "fpcache> alpha:" << alpha << endl;
 					}
 					else
 					{
@@ -298,13 +309,13 @@ void drive_machine() {
 /******************************************************************************************************************************/
 /******************************************************************************************************************************/
 			/*
-				fpcache -r 50 -p transactions.txt -s 15 -H 3 -L 1 -U 6 -l 1000 -b 2000
-				fpcache -r 1000 -p kosarak.dat -s 15 -H 5 -L 0 -U 5 -l 1000 -b 9000
-				fpcache -r 1000 -p kosarak.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
-				fpcache -r 800 -p kosarak.dat -s 19 -H 3 -L 0 -U 7
-				fpcache -r 200 -p T40I10D100K.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
-				fpcache -r 200 -p retail.dat -s 21 -H 2 -L 0 -U 8 -l 2000 -b 4000
-				fpcache -r 200 -p T10I4D100K.dat -s 20 -H 2 -L 0 -U 8 -l 2000 -b 4000
+				fpcache -r 50 -p transactions.txt -s 15 -H 3 -L 1 -U 6 -m 1000 -R 0.1
+				fpcache -r 1000 -p kosarak.dat -s 15 -H 5 -L 0 -U 5 -m 1000 -R 0.1
+				fpcache -p kosarak.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.02 -a 1.6
+				fpcache -r 800 -p kosarak.dat -s 0.02 -H 3 -L 0 -U 7 -m 1000 -R 0.1 -a 2
+				fpcache -r 200 -p T40I10D100K.dat -s 21 -H 2 -L 0 -U 8 -m 1000 -R 0.1
+				fpcache -r 200 -p retail.dat -s 21 -H 2 -L 0 -U 8 -m 1000 -R 0.1 
+				fpcache -r 200 -p T10I4D100K.dat -s 20 -H 2 -L 0 -U 8 -m 1000 -R 0.1
 				T10I4D100K
 				T40I10D100K
 				retail
@@ -319,13 +330,13 @@ void drive_machine() {
 			}
 
 
-
-
 			LRUStack lruStack(room);
-			
 			FPCache fpCache(room,highSizeWeight, lowSizeWeight,lruSizeWeight);
 			ARCCache accCache(room);
-			fpCache.setMinSupport(sup);
+
+
+			fpCache.setMinSupport(supWet*samplenum);
+			fpCache.setMinSupportWet(supWet);
 			//std::set<Pattern> patterns;
 			fpCache.setMaxLogSize(logSize);
 
@@ -334,18 +345,17 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, accCache, _transactions, temptrans, 10000, 0.1);
+			uniAccess(lruStack, fpCache, accCache, _transactions, temptrans, samplenum/samplingRate, samplingRate,alpha);
+
+
 			//auto transIt = _transactions.begin();
 			//while (transIt != _transactions.end())
 			//{
 			//	auto itemsIt = (*transIt).begin();
 			//	while (itemsIt != (*transIt).end())
 			//	{
-
 			//		lruStack.access(*itemsIt);
-
 			//		fpCache.access(*itemsIt);
-
 			//		itemsIt++;
 			//	}
 			//	
@@ -357,7 +367,7 @@ void drive_machine() {
 			//		counter++;
 			//	}
 			//	
-			///*********************************************************************/
+			//*********************************************************************/
 			//	if (counter >= fpCache.getMaxLogSize())
 			//	{
 			//		//此括号内为计算和调整fpcache 的代码块
@@ -368,7 +378,6 @@ void drive_machine() {
 			//			fpCache.getHighCorrCache().getShadowCache(),
 			//			fpCache.getLowCorrCache().getShadowCache());
 			//		fpCache.cacheOrganize();
-
 			//		/***********************************************************/
 			//		cout << "ACC_NUM:" << fpCache.stateACC()
 			//			<< " HIT_NUM:" << fpCache.stateHIT()
@@ -378,9 +387,7 @@ void drive_machine() {
 			//		counter = 0;
 			//		blankCounter = 0;
 			//	}
-			///********************************************************************/
-
-
+			//********************************************************************/
 			//	transIt++;
 			//}
 
@@ -389,9 +396,6 @@ void drive_machine() {
 			cout << "ARC:	hit ratio:"; accCache.getHitRatio(); cout << endl;
 			
 			lruStack.flush();
-/******************************************************************************************************************************/
-/******************************************************************************************************************************/
-
 		}
 		else if (0 == strcmp(comm_buffer, "exit")) {
 			printf("exit...\n");

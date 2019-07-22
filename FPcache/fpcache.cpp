@@ -1,9 +1,9 @@
 #include "fpcache.hpp"
 
 FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lowScaleWeight, float _lruScaleWeight) :
-	highCorrCache(0,true), lowCorrCache(0,false), lruCache(0), maxszie(_maxszie), highScaleWeight(_highScaleWeight),
+	highCorrCache(0, true), lowCorrCache(0, false), lruCache(0), maxszie(_maxszie), highScaleWeight(_highScaleWeight),
 	lowScaleWeight(_lowScaleWeight), lruScaleWeight(_lruScaleWeight), highCorrCacheMaxSize(0), lowCorrCacheMaxSize(0),
-	lruCacheMaxSize(0), minimum_support_threshold(0),maxLogSize(0),highLowThreshold(0.2)
+	lruCacheMaxSize(0), minimum_support_threshold(0), maxLogSize(0), highLowThreshold(0.2), min_sup_wet(0.02)
 {
 	float sum=_highScaleWeight + _lowScaleWeight + _lruScaleWeight;
 	size_t highCacheSize = 0;
@@ -130,6 +130,14 @@ uint64_t FPCache::getMaxLogSize()
 void FPCache::setMinSupport(uint64_t _minimum_support_threshold)
 {
 	minimum_support_threshold=_minimum_support_threshold;
+}
+void FPCache::setMinSupportWet(double _min_sup_wet)
+{
+	min_sup_wet = _min_sup_wet;
+}
+float FPCache::getMinSupportWet()
+{
+	return min_sup_wet;
 }
 //将Item调入HighCorrCache，在此之前要将其从lru中抽取出来。
 bool FPCache::setHighCorrCacheItem(Item _item)

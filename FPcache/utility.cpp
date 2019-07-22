@@ -54,7 +54,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	std::vector<Transaction>&transactions, 
 	std::vector<Transaction>&temptrans,
 	size_t M,
-	float rate) 
+	float rate,
+	float a) 
 {
 	temptrans.clear();
 	temptrans = transactions;
@@ -71,13 +72,24 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	while (temptrans.size()> WINDOW) {
 		for (size_t index = 0; index < WINDOW; index++)
 		{
-			slice.push_back(temptrans.at(index));
+			std::vector<Transaction>::iterator beginIt = temptrans.begin();
+			int idx = radmGen(0, temptrans.size() - 1, 1);
+			slice.push_back(temptrans.at(idx));
+			std::vector<Transaction>::iterator it = beginIt + idx;
+			temptrans.erase(it);
 		}
-		for (size_t index = 0; index < WINDOW; index++)
-		{
-			temptrans.erase(temptrans.begin());
-			//temptrans.shrink_to_fit();
-		}
+
+
+
+		//for (size_t index = 0; index < WINDOW; index++)
+		//{
+		//	slice.push_back(temptrans.at(index));
+		//}
+		//for (size_t index = 0; index < WINDOW; index++)
+		//{
+		//	temptrans.erase(temptrans.begin());
+		//	//temptrans.shrink_to_fit();
+		//}
 		tempslice = slice;//保存信息，在访问过程中slice的数据会消失
 		//我们得到了一个含有一组事务的容器slice，下面随机取出这个容器中的事务项
 		while (!slice.empty())
@@ -104,7 +116,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 					thenext--;
 					if (thenext == 0) {//该采样了
 						samplingTrans.push_back(Transaction(tempslice.at(index)));
-						thenext = sampTheNext(0.7, rate, sampCounter, M);
+						thenext = sampTheNext(a, rate, sampCounter, M);
 						sampCounter++;
 					}
 					if (thenext == 0) {
@@ -122,7 +134,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						sampCounter = 0;
 						thenext = 1;
 						/*************/
-						
+						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 						fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
@@ -145,6 +157,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						/*************/
 						//std::set<Pattern> patterns;
 						//std::vector<Pattern> sortedPatterns;
+						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
