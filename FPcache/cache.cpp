@@ -35,6 +35,10 @@ FPcache& fpCache::getCache()
 {
 	return cache;
 }
+uint64_t fpCache::getMaxSize()
+{
+	return maxszie;
+}
 //_item ÊÇ·ñÔÚ
 bool fpCache::isItemInCache(Item _item) {
 	auto cit = cache.begin();

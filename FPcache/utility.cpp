@@ -138,10 +138,11 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 						fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
+						cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
 						fpcahe.cacheOrganize();
 
 						/***********************************************************/
-						cout << fpcahe << "	sample number:" << samplingTrans.size() << "	¡¾" << ((double)finishedCounter / totalsize) * 100 << "%¡¿" << endl;
+						cout << fpcahe<<"	"<< fpcahe.getHighCorrCache().getCacheSize()<<"/"<<fpcahe.getHighCorrCache().getMaxSize() <<"	sample num:" << samplingTrans.size() << "	¡¾" << ((double)finishedCounter / totalsize) * 100 << "%¡¿" << endl;
 						cout << lru << endl;
 						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
 
@@ -161,10 +162,11 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
+						cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
 						fpcahe.cacheOrganize();
 
 						/***********************************************************/
-						cout << fpcahe <<  "	sample number:" << samplingTrans.size() <<"	¡¾" <<((double)finishedCounter/totalsize)*100<<"%¡¿"<<endl;
+						cout << fpcahe << "	" << fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() << "	sample num:" << samplingTrans.size() << "	¡¾" << ((double)finishedCounter / totalsize) * 100 << "%¡¿" << endl;
 						cout << lru  << endl;
 						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
 

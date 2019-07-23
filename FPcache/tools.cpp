@@ -311,7 +311,7 @@ void drive_machine() {
 			/*
 				fpcache -r 50 -p transactions.txt -s 15 -H 3 -L 1 -U 6 -m 1000 -R 0.1
 				fpcache -r 1000 -p kosarak.dat -s 15 -H 5 -L 0 -U 5 -m 1000 -R 0.1
-				fpcache -p kosarak.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.02 -a 1.6
+				fpcache -p kosarak.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.01 -a 1.6
 				fpcache -r 800 -p kosarak.dat -s 0.02 -H 3 -L 0 -U 7 -m 1000 -R 0.1 -a 2
 				fpcache -r 200 -p T40I10D100K.dat -s 21 -H 2 -L 0 -U 8 -m 1000 -R 0.1
 				fpcache -r 200 -p retail.dat -s 21 -H 2 -L 0 -U 8 -m 1000 -R 0.1 
@@ -392,6 +392,7 @@ void drive_machine() {
 			//}
 
 			cout <<"Total:\n"<< fpCache << endl;
+			printf("args:	%s\n", comm_args_buffer);
 			cout << lruStack << endl;
 			cout << "ARC:	hit ratio:"; accCache.getHitRatio(); cout << endl;
 			

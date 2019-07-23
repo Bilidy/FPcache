@@ -43,9 +43,11 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 	uint64_t MaxSupport = minimum_support_threshold;
 	Pattern tempTrans;
 	std::set<Pattern>::iterator tempit;
+	shadowCache tempScache;
 
-	while (patterns.size())
+	while (patterns.size() && (tempScache.size() < highCorrCache.getMaxCacheSize()))
 	{
+		
 		MaxSupport = minimum_support_threshold;
 		auto it = patterns.begin();
 		while (it != patterns.end())
@@ -61,6 +63,13 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 		if (tempTrans.first.size() > 1)
 		{
 			sortedPatterns.push_back(tempTrans);
+			auto its = tempTrans.first.begin();
+			while (its != tempTrans.first.end())
+			{
+				tempScache[*its] = 0;
+				printf("%d\n", tempScache.size());
+				its++;
+			}
 		}
 		patterns.erase(tempit);
 	}

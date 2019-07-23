@@ -34,7 +34,7 @@ public:
 	shadowCache & getShadowCache();
 
 	FPcache & getCache();
-
+	uint64_t getMaxSize();
 	bool isItemInCache(Item _item);
 
 	bool setCacheItem(Item _item);
