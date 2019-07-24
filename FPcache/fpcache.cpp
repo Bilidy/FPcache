@@ -40,6 +40,7 @@ bool FPCache::runFPAnalyse(std::vector<Transaction> _accLog,std::set<Pattern>& p
 //sort Patterns By Support form big to little
 void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns)
 {
+	sortedPatterns.clear();
 	uint64_t MaxSupport = minimum_support_threshold;
 	Pattern tempTrans;
 	std::set<Pattern>::iterator tempit;
@@ -66,10 +67,14 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 			auto its = tempTrans.first.begin();
 			while (its != tempTrans.first.end())
 			{
-				tempScache[*its] = 0;
-				printf("%d\n", tempScache.size());
+				if (tempScache.find(*its) == tempScache.end()) {
+					tempScache.insert(std::pair<Item,uint64_t>((*its), 0));
+					//printf("\n**********%d\n", tempScache.size());
+				}
+				//printf("%s ", (*its).c_str());
 				its++;
 			}
+			//printf("\n");
 		}
 		patterns.erase(tempit);
 	}

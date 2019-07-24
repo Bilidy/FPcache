@@ -162,7 +162,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
-						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
+						cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
 						fpcahe.cacheOrganize();
 
 						/***********************************************************/
