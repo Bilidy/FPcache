@@ -6,7 +6,7 @@
 #include <math.h>
 #include"fpcache.hpp"
 #include <stdlib.h>
-#define WINDOW 10
+#define WINDOW 128
 
 using std::cout;
 using std::endl;
@@ -49,13 +49,13 @@ double radmGen(size_t low, size_t high, double) {
 	std::uniform_real_distribution<double> dis2(0.0, 1.0);
 	return dis2(random);
 }
-
 void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
-	std::vector<Transaction>&transactions, 
+	std::vector<Transaction>&transactions,
+
 	std::vector<Transaction>&temptrans,
 	size_t M,
 	float rate,
-	float a) 
+	float a)
 {
 	temptrans.clear();
 	temptrans = transactions;
@@ -69,7 +69,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	int thenext = 1;
 	std::set<Pattern> patterns;
 	std::vector<Pattern> sortedPatterns;
-	while (temptrans.size()> WINDOW) {
+	while (temptrans.size() > WINDOW) {
 		for (size_t index = 0; index < WINDOW; index++)
 		{
 			std::vector<Transaction>::iterator beginIt = temptrans.begin();
@@ -94,7 +94,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 		//我们得到了一个含有一组事务的容器slice，下面随机取出这个容器中的事务项
 		while (!slice.empty())
 		{
-			
+
 
 			int index = radmGen(0, slice.size() - 1, 1);//选取容器中的一个事务
 			if (slice.at(index).size() > 0) {			//如果事务中项的数量不为空
@@ -137,12 +137,12 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
-						fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
+						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
 						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
 						fpcahe.cacheOrganize();
 
 						/***********************************************************/
-						cout << fpcahe<<"	"<< fpcahe.getHighCorrCache().getCacheSize()<<"/"<<fpcahe.getHighCorrCache().getMaxSize() <<"	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
+						cout << fpcahe << "	" << fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() << "	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
 						cout << lru << endl;
 						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
 
@@ -167,8 +167,224 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 
 						/***********************************************************/
 						cout << fpcahe << "	" << fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() << "	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
-						cout << lru  << endl;
+						cout << lru << endl;
 						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
+
+						samplingTrans.clear();
+						/**********************************************************/
+						/*************/
+						continue;
+					}
+				}
+			};
+		}
+	}
+}
+struct lastState
+{
+	uint64_t lastStateAcc = 0;
+	uint64_t lastStateHit = 0;
+	uint64_t lastStateMis = 0;
+};
+void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
+	std::vector<Transaction>&transactions,
+	std::vector<Transaction>&w_transactions,
+	std::vector<Transaction>&temptrans,
+	size_t M,
+	float rate,
+	float a,
+	size_t skew_jump_low,
+	size_t skew_jump_high)
+{
+	temptrans.clear();
+	temptrans = transactions;
+	std::vector<Transaction>wtemptrans = w_transactions;
+	std::vector<Transaction> samplingTrans;
+	std::vector<Transaction> slice;
+	std::vector<Transaction> tempslice;
+	int finishedCounter = 0;
+	int totalsize = transactions.size();
+	int sliceCounter = 0;
+	int sampCounter = 0;
+	int thenext = 1;
+	std::set<Pattern> patterns;
+	std::vector<Pattern> sortedPatterns;
+
+	lastState FPClast;
+	lastState LRUlast;
+	lastState ARClast;
+
+	for (size_t index = 0; index < WINDOW; index++)
+	{
+		std::vector<Transaction>::iterator beginIt = temptrans.begin();
+		int idx = radmGen(0, temptrans.size() - 1, 1);
+		slice.push_back(temptrans.at(idx));
+		std::vector<Transaction>::iterator it = beginIt + idx;
+		temptrans.erase(it);
+	}
+	while (temptrans.size()> 0) {
+		tempslice = slice;//保存信息，在访问过程中slice的数据会消失
+		//我们得到了一个含有一组事务的容器slice，下面随机取出这个容器中的事务项
+		while (!slice.empty())
+		{
+			
+
+			int index = radmGen(0, slice.size() - 1, 1);//选取容器中的一个事务
+			if (slice.at(index).size() > 0) {			//如果事务中项的数量不为空
+
+				int itmIndex = radmGen(0, slice.at(index).size() - 1, 1);//选取事务中的一个项
+				if ((skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter))
+				{
+					lru.access(slice.at(index).at(itmIndex));//模拟访问
+					fpcahe.access(slice.at(index).at(itmIndex));//模拟访问
+					accache.ARCreference(stoi(slice.at(index).at(itmIndex)));
+				}
+				else {
+					lru.access(slice.at(index).at(itmIndex));//模拟访问
+					fpcahe.access(slice.at(index).at(itmIndex));//模拟访问
+					accache.ARCreference(stoi(slice.at(index).at(itmIndex)));
+				}
+				slice.at(index).erase(slice.at(index).begin() + itmIndex);//将此项从该事务中删除
+				//slice.at(index).shrink_to_fit();
+
+				if (slice.at(index).empty())
+				{
+					sliceCounter++;
+
+					finishedCounter++;
+					if (((skew_jump_low== finishedCounter)|| (skew_jump_high == finishedCounter))&&(wtemptrans.size()>0))
+					{
+						cout << "##### workload changed ####"<<endl;
+					}
+					thenext--;
+					if (thenext == 0) {//该采样了
+						samplingTrans.push_back(Transaction(tempslice.at(index)));
+						thenext = sampTheNext(a, rate, sampCounter, M);
+						sampCounter++;
+					}
+					if (thenext == 0) {
+						thenext = 1;
+					}
+					//保持一致性
+					slice.erase(slice.begin() + index);
+					//slice.shrink_to_fit();
+					tempslice.erase(tempslice.begin() + index);
+					//添加一个事务进入slice
+					if (wtemptrans.size() > 0 && (skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter)) {
+						std::vector<Transaction>::iterator beginIt = wtemptrans.begin();
+						int idx = radmGen(0, wtemptrans.size() - 1, 1);
+						slice.push_back(wtemptrans.at(idx));
+						tempslice.push_back(wtemptrans.at(idx));
+						std::vector<Transaction>::iterator it = beginIt + idx;
+						wtemptrans.erase(it);
+						if (wtemptrans.size() == 0) {
+							cout << "##### workload changed ####" << endl;
+						}
+					}
+					else if (temptrans.size() > 0) {
+						std::vector<Transaction>::iterator beginIt = temptrans.begin();
+						int idx = radmGen(0, temptrans.size() - 1, 1);
+						slice.push_back(temptrans.at(idx));
+						tempslice.push_back(temptrans.at(idx));
+						std::vector<Transaction>::iterator it = beginIt + idx;
+						temptrans.erase(it);
+					}
+
+					//tempslice.shrink_to_fit();
+
+					if (sampCounter == M * rate)//采样完了
+					{
+						sliceCounter = 0;
+						sampCounter = 0;
+						thenext = 1;
+						/*************/
+						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
+						fpcahe.runFPAnalyse(samplingTrans, patterns);
+						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
+						fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
+						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
+						fpcahe.cacheOrganize();
+
+						/***********************************************************/
+						/*cout << fpcahe<<"	"<< fpcahe.getHighCorrCache().getCacheSize()<<"/"<<fpcahe.getHighCorrCache().getMaxSize() <<"	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
+						cout << lru << endl;
+						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;*/
+
+						cout << "FPC:	ACC:" << fpcahe.stateACC() - FPClast.lastStateAcc
+							<< " HIT:" << fpcahe.stateHIT()- FPClast.lastStateHit
+							<< " FAULT:" << fpcahe.stateFault()- FPClast.lastStateMis
+							<< "	hit ratio:" << ((float)(fpcahe.stateHIT()- FPClast.lastStateHit)) / (fpcahe.stateACC()- FPClast.lastStateAcc) * 100 << "%	" 
+							<< fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() 
+							<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
+						cout << "LRU:	ACC:" << lru.stateACC() - LRUlast.lastStateAcc
+							<< " HIT:" << lru.stateHIT() - LRUlast.lastStateHit
+							<< " FAULT:" << lru.stateFault() - LRUlast.lastStateMis
+							<< "	hit ratio:" << ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << "%" << endl;
+						cout << "ARC:	ACC:" << accache.getAcc() - ARClast.lastStateAcc
+							<< " HIT:" << accache.getHit() - ARClast.lastStateHit
+							<< " FAULT:" << accache.getMis() - ARClast.lastStateMis
+							<< "	hit ratio:" << ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << "%" << endl;
+						cout << endl;
+						FPClast.lastStateAcc = fpcahe.stateACC();
+						FPClast.lastStateHit = fpcahe.stateHIT();
+						FPClast.lastStateMis = fpcahe.stateFault();
+						LRUlast.lastStateAcc = lru.stateACC();
+						LRUlast.lastStateHit = lru.stateHIT();
+						LRUlast.lastStateMis = lru.stateFault();
+						ARClast.lastStateAcc = accache.getAcc();
+						ARClast.lastStateHit = accache.getHit();
+						ARClast.lastStateMis = accache.getMis();
+
+
+						samplingTrans.clear();
+						/**********************************************************/
+						/*************/
+						continue;
+					}
+					if (sliceCounter == M) {
+						sliceCounter = 0;
+						sampCounter = 0;
+						thenext = 1;
+						/*************/
+						//std::set<Pattern> patterns;
+						//std::vector<Pattern> sortedPatterns;
+						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
+						fpcahe.runFPAnalyse(samplingTrans, patterns);
+						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
+						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
+						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
+						fpcahe.cacheOrganize();
+
+						/***********************************************************/
+						//cout << fpcahe << "	" << fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() << "	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
+						//cout << lru  << endl;
+						//cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
+
+						cout << "FPC:	ACC:" << fpcahe.stateACC() - FPClast.lastStateAcc
+							<< " HIT:" << fpcahe.stateHIT() - FPClast.lastStateHit
+							<< " FAULT:" << fpcahe.stateFault() - FPClast.lastStateMis
+							<< "	hit ratio:" << ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 << "%	"
+							<< fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize()
+							<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl; 
+						cout << "LRU:	ACC:" << lru.stateACC()-LRUlast.lastStateAcc
+							<< " HIT:" << lru.stateHIT()-LRUlast.lastStateHit
+							<< " FAULT:" << lru.stateFault()-LRUlast.lastStateMis
+							<< "	hit ratio:" << ((float)(lru.stateHIT()-LRUlast.lastStateHit)) /((lru.stateACC()-LRUlast.lastStateAcc)) * 100 << "%" << endl;
+						cout << "ARC:	ACC:" << accache.getAcc() - ARClast.lastStateAcc
+							<< " HIT:" << accache.getHit() - ARClast.lastStateHit
+							<< " FAULT:" << accache.getMis() - ARClast.lastStateMis
+							<< "	hit ratio:" << ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << "%" << endl;
+						cout << endl;
+						FPClast.lastStateAcc = fpcahe.stateACC();
+						FPClast.lastStateHit = fpcahe.stateHIT();
+						FPClast.lastStateMis = fpcahe.stateFault();
+						LRUlast.lastStateAcc = lru.stateACC();
+						LRUlast.lastStateHit = lru.stateHIT();
+						LRUlast.lastStateMis = lru.stateFault();
+						ARClast.lastStateAcc = accache.getAcc();
+						ARClast.lastStateHit = accache.getHit();
+						ARClast.lastStateMis = accache.getMis();
+
 
 						samplingTrans.clear();
 						/**********************************************************/
@@ -197,4 +413,23 @@ int sampTheNext(float a, float rate, size_t curr ,size_t M) {// M=m/r
 		return M - ycurr;
 	}
 	return ynext - ycurr;
+}
+void skewWorkLoad(std::vector<Transaction>& skew_transactions,size_t skew_low, size_t skew_high) {
+	for (size_t i = skew_low; i <= skew_high; i++)
+	{
+		Transaction::iterator it = skew_transactions[i].begin();
+		while (it!= skew_transactions[i].end())
+		{
+			/*
+			char buffer[10]{0};
+			itoa(atoi((*it).c_str())+20000, buffer,10);
+			(*it) = buffer;
+			*/
+			(*it) = "10000" + (*it);
+			it++;
+		}
+		
+	}
+	
+
 }

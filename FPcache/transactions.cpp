@@ -1,4 +1,5 @@
 #include "transactions.h"
+#include <stdlib.h>
 
 void split(std::string srcstr, char splitby, std::vector<std::string> &_substr) {
 	if ("" != srcstr && splitby)
@@ -20,7 +21,28 @@ void split(std::string srcstr, char splitby, std::vector<std::string> &_substr) 
 		}
 	}
 }
-
+std::vector<std::string> split(std::string srcstr, char splitby) {
+	std::vector<std::string> _substr;
+	if ("" != srcstr && splitby)
+	{
+		size_t pos = 0;
+		while (true)
+		{
+			pos = srcstr.find(splitby);
+			if (pos >= srcstr.size()) {
+				if (srcstr != "") {
+					_substr.push_back(srcstr);
+				}break;
+			}
+			string distr = srcstr.substr(0, pos);
+			srcstr = srcstr.substr(pos + 1, srcstr.size());
+			if (distr != "") {
+				_substr.push_back(distr);
+			}
+		}
+	}
+	return _substr;
+}
 void transactions(const char* src_path) {
 	std::ifstream fin;
 	std::ofstream fout;
@@ -148,4 +170,28 @@ void transactions(const string src_path, std::vector<Transaction> &transactions)
 		transactions.push_back(trans);
 	}
 	fin.close();
+}
+void transactions(const string src_path, std::vector<Transaction> &transactions,int) {
+
+	string traceName = src_path;
+
+	ifstream myFile(traceName);
+
+	if (myFile.good())
+	{
+		char buffer[20];
+		int startingBlock;int numOfBlocks, ignore, ignore2;
+		while (myFile >> startingBlock)
+		{
+			myFile >> numOfBlocks; myFile >> ignore; myFile >> ignore2;
+			Transaction trans;
+			for (int i = 0; i < numOfBlocks; i++)
+			{
+				Item itm = _itoa(startingBlock + i, buffer,10);
+				trans.push_back(itm);
+			}
+			transactions.push_back(trans);
+		}
+	}
+	myFile.close();
 }

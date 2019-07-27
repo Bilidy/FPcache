@@ -12,6 +12,9 @@ public:
 	ARCCache(int size);
 	void ARCreference(int newEntry);
 	void getHitRatio();
+	uint64_t getHit();
+	uint64_t getAcc();
+	uint64_t getMis();
 	void REPLACE(int newEntry);
 
 private:

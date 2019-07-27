@@ -19,6 +19,21 @@ void ARCCache::getHitRatio()
 
 }
 
+uint64_t ARCCache::getHit()
+{
+	return cacheHit;
+}
+
+uint64_t ARCCache::getAcc()
+{
+	return cacheRequest;
+}
+
+uint64_t ARCCache::getMis()
+{
+	return cacheRequest-cacheHit;
+}
+
 void ARCCache::ARCreference(int newEntry)
 {
 	cacheRequest++;
