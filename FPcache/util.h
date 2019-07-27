@@ -24,7 +24,8 @@ void uniAccess(LRUStack& lru,FPCache&fpcahe, ARCCache&accache,
 	float rate,
 	float a	,
 	size_t skew_jump_low,
-	size_t skew_jump_high);
+	size_t skew_jump_high,
+	string output);
 
 void skewWorkLoad(std::vector<Transaction>& skew_transactions, size_t skew_low, size_t skew_high);
 #endif // !UTIL_H_

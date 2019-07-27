@@ -21,9 +21,9 @@
 using Item = std::string;
 using Transaction = std::vector<Item>;
 
-#define ARGS_BUFFER_SIZE 101
-#define COMM_BUFFER_SIZE 11
-#define COMM_ARGS_BUFFER_SIZE 91
+#define ARGS_BUFFER_SIZE 201
+#define COMM_BUFFER_SIZE 21
+#define COMM_ARGS_BUFFER_SIZE 191
 #define DEFAULT_SUPPORT 0.02;
 
 
@@ -172,6 +172,7 @@ size_t skew_lruSizeWeight = 0.6;
 size_t skew_logSize = 1000;
 size_t skew_samplenum = 1000;
 size_t skew_blankSize = 1000;
+string defaultOutputName = "defaultOutput.csv";
 double skew_samplingRate = 0.1;
 double skew_alpha = 0.7;
 
@@ -492,6 +493,12 @@ void drive_machine() {
 					}
 
 				}
+				else if ("-o" == (*it).first) {
+					if ((*it).second != ""){
+						defaultOutputName = (*it).second + ".csv";
+					}
+					cout << "skewtest> result output:" << defaultOutputName << endl;
+				}
 				else if ("-H" == (*it).first) {
 					if (stor((*it).second, skew_highSizeWeight)) {
 						cout << "skewtest> high weight:" << skew_highSizeWeight << endl;
@@ -564,6 +571,7 @@ void drive_machine() {
 				skewtest -p T40I10D100K.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
 				skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
 				skewtest -p P12.lis -w retail.dat -H 3 -L 0 -U 7 -m 10000 -R 0.1 -r 100000 -s 0.01 -a 1.6
+				skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 1.7 -o m1000_R01_r1000_s0008_a17
 			*/
 			if (skew_needRebuild)//需重建
 			{
@@ -610,7 +618,8 @@ void drive_machine() {
 				skew_samplingRate,
 				skew_alpha, 
 				skew_jump_low,
-				skew_jump_high);
+				skew_jump_high,
+				defaultOutputName);
 
 			cout << "Total:\n" << fpCache << endl;
 			printf("args:	%s\n", comm_args_buffer);

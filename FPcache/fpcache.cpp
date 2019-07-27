@@ -46,7 +46,7 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 	
 	shadowCache tempScache;
 
-	while (patterns.size() && (tempScache.size() < highCorrCache.getMaxCacheSize()))
+	while (patterns.size() && sortedPatterns .size()<=2000&& (tempScache.size() < highCorrCache.getMaxCacheSize()))
 	{
 		MaxSupport = 0;
 		auto tempit = patterns.end();
@@ -78,6 +78,7 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 		}
 		//82.499%
 		//skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 0.3 会报错？？？调查
+		//已解决
 	}
 }
 

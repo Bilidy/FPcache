@@ -6,6 +6,7 @@
 #include <math.h>
 #include"fpcache.hpp"
 #include <stdlib.h>
+#include <fstream>
 #define WINDOW 128
 
 using std::cout;
@@ -194,7 +195,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	float rate,
 	float a,
 	size_t skew_jump_low,
-	size_t skew_jump_high)
+	size_t skew_jump_high,
+	string outputfile)
 {
 	temptrans.clear();
 	temptrans = transactions;
@@ -213,6 +215,11 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	lastState FPClast;
 	lastState LRUlast;
 	lastState ARClast;
+
+
+	int streamNO = 1;
+	ofstream oFile;
+	
 
 	for (size_t index = 0; index < WINDOW; index++)
 	{
@@ -291,56 +298,6 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 					}
 
 					//tempslice.shrink_to_fit();
-
-					if (sampCounter == M * rate)//采样完了
-					{
-						sliceCounter = 0;
-						sampCounter = 0;
-						thenext = 1;
-						/*************/
-						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
-						fpcahe.runFPAnalyse(samplingTrans, patterns);
-						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
-						fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
-						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
-						fpcahe.cacheOrganize();
-
-						/***********************************************************/
-						/*cout << fpcahe<<"	"<< fpcahe.getHighCorrCache().getCacheSize()<<"/"<<fpcahe.getHighCorrCache().getMaxSize() <<"	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
-						cout << lru << endl;
-						cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;*/
-
-						cout << "FPC:	ACC:" << fpcahe.stateACC() - FPClast.lastStateAcc
-							<< " HIT:" << fpcahe.stateHIT()- FPClast.lastStateHit
-							<< " FAULT:" << fpcahe.stateFault()- FPClast.lastStateMis
-							<< "	hit ratio:" << ((float)(fpcahe.stateHIT()- FPClast.lastStateHit)) / (fpcahe.stateACC()- FPClast.lastStateAcc) * 100 << "%	" 
-							<< fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() 
-							<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
-						cout << "LRU:	ACC:" << lru.stateACC() - LRUlast.lastStateAcc
-							<< " HIT:" << lru.stateHIT() - LRUlast.lastStateHit
-							<< " FAULT:" << lru.stateFault() - LRUlast.lastStateMis
-							<< "	hit ratio:" << ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << "%" << endl;
-						cout << "ARC:	ACC:" << accache.getAcc() - ARClast.lastStateAcc
-							<< " HIT:" << accache.getHit() - ARClast.lastStateHit
-							<< " FAULT:" << accache.getMis() - ARClast.lastStateMis
-							<< "	hit ratio:" << ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << "%" << endl;
-						cout << endl;
-						FPClast.lastStateAcc = fpcahe.stateACC();
-						FPClast.lastStateHit = fpcahe.stateHIT();
-						FPClast.lastStateMis = fpcahe.stateFault();
-						LRUlast.lastStateAcc = lru.stateACC();
-						LRUlast.lastStateHit = lru.stateHIT();
-						LRUlast.lastStateMis = lru.stateFault();
-						ARClast.lastStateAcc = accache.getAcc();
-						ARClast.lastStateHit = accache.getHit();
-						ARClast.lastStateMis = accache.getMis();
-
-
-						samplingTrans.clear();
-						/**********************************************************/
-						/*************/
-						continue;
-					}
 					if (sliceCounter == M) {
 						sliceCounter = 0;
 						sampCounter = 0;
@@ -365,16 +322,25 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 							<< " FAULT:" << fpcahe.stateFault() - FPClast.lastStateMis
 							<< "	hit ratio:" << ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 << "%	"
 							<< fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize()
-							<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl; 
-						cout << "LRU:	ACC:" << lru.stateACC()-LRUlast.lastStateAcc
-							<< " HIT:" << lru.stateHIT()-LRUlast.lastStateHit
-							<< " FAULT:" << lru.stateFault()-LRUlast.lastStateMis
-							<< "	hit ratio:" << ((float)(lru.stateHIT()-LRUlast.lastStateHit)) /((lru.stateACC()-LRUlast.lastStateAcc)) * 100 << "%" << endl;
+							<< "	sample num:" << samplingTrans.size()
+							<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
+						cout << "LRU:	ACC:" << lru.stateACC() - LRUlast.lastStateAcc
+							<< " HIT:" << lru.stateHIT() - LRUlast.lastStateHit
+							<< " FAULT:" << lru.stateFault() - LRUlast.lastStateMis
+							<< "	hit ratio:" << ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << "%" << endl;
 						cout << "ARC:	ACC:" << accache.getAcc() - ARClast.lastStateAcc
 							<< " HIT:" << accache.getHit() - ARClast.lastStateHit
 							<< " FAULT:" << accache.getMis() - ARClast.lastStateMis
 							<< "	hit ratio:" << ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << "%" << endl;
 						cout << endl;
+
+						oFile.open(outputfile, ios::out | ios::app);
+						oFile << streamNO++ << ","
+							<< ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 << ","
+							<< ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << ","
+							<< ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << endl;
+						oFile.close();
+
 						FPClast.lastStateAcc = fpcahe.stateACC();
 						FPClast.lastStateHit = fpcahe.stateHIT();
 						FPClast.lastStateMis = fpcahe.stateFault();
@@ -391,10 +357,71 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						/*************/
 						continue;
 					}
+					//if (sampCounter == M * rate)//采样完了
+					//{
+					//	sliceCounter = 0;
+					//	sampCounter = 0;
+					//	thenext = 1;
+					//	/*************/
+					//	fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
+					//	fpcahe.runFPAnalyse(samplingTrans, patterns);
+					//	fpcahe.sortPatternsBySup(sortedPatterns, patterns);
+					//	fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
+					//	//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
+					//	fpcahe.cacheOrganize();
+
+					//	/***********************************************************/
+					//	/*cout << fpcahe<<"	"<< fpcahe.getHighCorrCache().getCacheSize()<<"/"<<fpcahe.getHighCorrCache().getMaxSize() <<"	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
+					//	cout << lru << endl;
+					//	cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;*/
+
+					//	cout << "FPC:	ACC:" << fpcahe.stateACC() - FPClast.lastStateAcc
+					//		<< " HIT:" << fpcahe.stateHIT()- FPClast.lastStateHit
+					//		<< " FAULT:" << fpcahe.stateFault()- FPClast.lastStateMis
+					//		<< "	hit ratio:" << ((float)(fpcahe.stateHIT()- FPClast.lastStateHit)) / (fpcahe.stateACC()- FPClast.lastStateAcc) * 100 << "%	" 
+					//		<< fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() 
+					//		<< "	sample num:" << samplingTrans.size()
+					//		<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
+					//	cout << "LRU:	ACC:" << lru.stateACC() - LRUlast.lastStateAcc
+					//		<< " HIT:" << lru.stateHIT() - LRUlast.lastStateHit
+					//		<< " FAULT:" << lru.stateFault() - LRUlast.lastStateMis
+					//		<< "	hit ratio:" << ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << "%" << endl;
+					//	cout << "ARC:	ACC:" << accache.getAcc() - ARClast.lastStateAcc
+					//		<< " HIT:" << accache.getHit() - ARClast.lastStateHit
+					//		<< " FAULT:" << accache.getMis() - ARClast.lastStateMis
+					//		<< "	hit ratio:" << ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << "%" << endl;
+					//	cout << endl;
+
+					//	oFile.open(outputfile, ios::out | ios::app);
+					//	oFile << streamNO++ << ","
+					//		<< ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 << ","
+					//		<< ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << ","
+					//		<< ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100;
+					//	oFile << std::endl;
+					//	oFile.close();
+
+					//	FPClast.lastStateAcc = fpcahe.stateACC();
+					//	FPClast.lastStateHit = fpcahe.stateHIT();
+					//	FPClast.lastStateMis = fpcahe.stateFault();
+					//	LRUlast.lastStateAcc = lru.stateACC();
+					//	LRUlast.lastStateHit = lru.stateHIT();
+					//	LRUlast.lastStateMis = lru.stateFault();
+					//	ARClast.lastStateAcc = accache.getAcc();
+					//	ARClast.lastStateHit = accache.getHit();
+					//	ARClast.lastStateMis = accache.getMis();
+
+
+					//	samplingTrans.clear();
+					//	/**********************************************************/
+					//	/*************/
+					//	continue;
+					//}
+					
 				}
 			};
 		}
 	}
+
 }
 
 int sampTheNext(float a, float rate, size_t curr ,size_t M) {// M=m/r 
