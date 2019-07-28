@@ -259,3 +259,5 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/FPcache/m1000_R01_r1000_s0008_a17_1000.csv
+/FPcache/m1000_R01_r1000_s0008_a17_10000.csv

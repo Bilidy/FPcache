@@ -220,7 +220,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	int streamNO = 1;
 	ofstream oFile;
 	
-
+	int recordcounter=0;
 	for (size_t index = 0; index < WINDOW; index++)
 	{
 		std::vector<Transaction>::iterator beginIt = temptrans.begin();
@@ -240,6 +240,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 			if (slice.at(index).size() > 0) {			//如果事务中项的数量不为空
 
 				int itmIndex = radmGen(0, slice.at(index).size() - 1, 1);//选取事务中的一个项
+				
+				
 				if ((skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter))
 				{
 					lru.access(slice.at(index).at(itmIndex));//模拟访问
@@ -251,6 +253,28 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 					fpcahe.access(slice.at(index).at(itmIndex));//模拟访问
 					accache.ARCreference(stoi(slice.at(index).at(itmIndex)));
 				}
+				recordcounter++;
+				if (recordcounter==10000)
+				{
+					oFile.open(outputfile, ios::out | ios::app);
+					oFile << streamNO++ << ","
+						<< ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 << ","
+						<< ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << ","
+						<< ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << endl;
+					oFile.close();
+					FPClast.lastStateAcc = fpcahe.stateACC();
+					FPClast.lastStateHit = fpcahe.stateHIT();
+					FPClast.lastStateMis = fpcahe.stateFault();
+					LRUlast.lastStateAcc = lru.stateACC();
+					LRUlast.lastStateHit = lru.stateHIT();
+					LRUlast.lastStateMis = lru.stateFault();
+					ARClast.lastStateAcc = accache.getAcc();
+					ARClast.lastStateHit = accache.getHit();
+					ARClast.lastStateMis = accache.getMis();
+					recordcounter = 0;
+				}
+
+
 				slice.at(index).erase(slice.at(index).begin() + itmIndex);//将此项从该事务中删除
 				//slice.at(index).shrink_to_fit();
 
@@ -298,7 +322,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 					}
 
 					//tempslice.shrink_to_fit();
-					if (sliceCounter == M) {
+					if (sliceCounter == M|| (slice.size()==0)) {
 						sliceCounter = 0;
 						sampCounter = 0;
 						thenext = 1;
@@ -334,14 +358,14 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 							<< "	hit ratio:" << ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << "%" << endl;
 						cout << endl;
 
-						oFile.open(outputfile, ios::out | ios::app);
+						/*oFile.open(outputfile, ios::out | ios::app);
 						oFile << streamNO++ << ","
 							<< ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 << ","
 							<< ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << ","
 							<< ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << endl;
-						oFile.close();
+						oFile.close();*/
 
-						FPClast.lastStateAcc = fpcahe.stateACC();
+						/*FPClast.lastStateAcc = fpcahe.stateACC();
 						FPClast.lastStateHit = fpcahe.stateHIT();
 						FPClast.lastStateMis = fpcahe.stateFault();
 						LRUlast.lastStateAcc = lru.stateACC();
@@ -349,7 +373,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						LRUlast.lastStateMis = lru.stateFault();
 						ARClast.lastStateAcc = accache.getAcc();
 						ARClast.lastStateHit = accache.getHit();
-						ARClast.lastStateMis = accache.getMis();
+						ARClast.lastStateMis = accache.getMis();*/
 
 
 						samplingTrans.clear();
