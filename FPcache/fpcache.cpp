@@ -1,23 +1,20 @@
 #include "fpcache.hpp"
+#include<iostream>
 
-FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lowScaleWeight, float _lruScaleWeight) :
-	highCorrCache(0, true), lowCorrCache(0, false), lruCache(0), maxszie(_maxszie), highScaleWeight(_highScaleWeight),
-	lowScaleWeight(_lowScaleWeight), lruScaleWeight(_lruScaleWeight), highCorrCacheMaxSize(0), lowCorrCacheMaxSize(0),
-	lruCacheMaxSize(0), minimum_support_threshold(0), maxLogSize(0), highLowThreshold(0.2), min_sup_wet(0.02)
+FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lruScaleWeight) :
+	highCorrCache(0, true), lruCache(0), maxszie(_maxszie), highScaleWeight(_highScaleWeight),
+	lruScaleWeight(_lruScaleWeight), highCorrCacheMaxSize(0),
+	lruCacheMaxSize(0), minimum_support_threshold(0), maxLogSize(0), min_sup_wet(0.02)
 {
-	float sum=_highScaleWeight + _lowScaleWeight + _lruScaleWeight;
+	float sum=_highScaleWeight + _lruScaleWeight;
 	size_t highCacheSize = 0;
-	size_t lowCacheSize = 0;
 	size_t lruCacheSize = 0;
 	if (sum) {
 		highCacheSize = _maxszie * (_highScaleWeight) / sum;
-		lowCacheSize = _maxszie * (_lowScaleWeight) / sum;
 		lruCacheSize = _maxszie * (_lruScaleWeight) / sum;
 	}
 
 	highCorrCache.setMaxCacheSize(highCacheSize);
-	lowCorrCache.setMaxCacheSize(lowCacheSize);
-	//lruCache.setMaxSize(_maxszie - highCacheSize - lowCacheSize);
 	lruCache.setMaxSize(_maxszie);
 
 	ACC_NUM = 0;
@@ -82,10 +79,9 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 	}
 }
 
-bool FPCache::procPattern(std::vector<Pattern>& patterns, shadowCache& _shadowHigh, shadowCache& _shadowLow)
+bool FPCache::procPattern(std::vector<Pattern>& patterns, shadowCache& _shadowHigh)
 {
 	_shadowHigh.clear();
-	_shadowLow.clear();
 	auto it = patterns.begin();
 	while (it != patterns.end() && _shadowHigh.size() < highCorrCache.getMaxCacheSize())
 	{
@@ -97,41 +93,15 @@ bool FPCache::procPattern(std::vector<Pattern>& patterns, shadowCache& _shadowHi
 		}
 		it++;
 	}
-	if (it != patterns.end())
-	{
-		while (it != patterns.end() && _shadowLow.size() < lowCorrCache.getMaxCacheSize())
-		{
-			auto its = (*it).first.begin();
-			while (its != (*it).first.end())
-			{
-				if (_shadowHigh.find(*its)== _shadowHigh.end())//不在highcache中
-				{
-					_shadowLow[*its] = 0;
-				}
-				its++;
-			}
-			it++;
-		}
-	}
-	else
-	{
-		_shadowLow.clear();
-	}
 	return true;
 }
 
-bool FPCache::getCacheDelta(shadowCache& _shadowHigh, shadowCache& _shadowLow,cacheDelta& _inHighCache, cacheDelta& _outHighCache, cacheDelta& _inLowCache, cacheDelta& _outLowCache)
+bool FPCache::getCacheDelta(shadowCache& _shadowHigh,cacheDelta& _inHighCache, cacheDelta& _outHighCache)
 {
 	return false;
 }
 
-void FPCache::setHighCorrCacheMaxSize(uint64_t _HighCorrCacheSize)
-{
-}
 
-void FPCache::setLowCorrCacheMaxSize(uint64_t _LowCorrCacheSize)
-{
-}
 
 void FPCache::setMaxLogSize(uint64_t _logSize)
 {
@@ -155,6 +125,7 @@ float FPCache::getMinSupportWet()
 {
 	return min_sup_wet;
 }
+
 //将Item调入HighCorrCache，在此之前要将其从lru中抽取出来。
 bool FPCache::setHighCorrCacheItem(Item _item)
 {
@@ -176,60 +147,30 @@ bool FPCache::setHighCorrCacheItem(Item _item)
 	}
 }
 
-bool FPCache::setLowCorrCacheItem(Item _item)
-{
-	if (lruCache.find(_item) != lruCache.end()) {
-		if (lruCache.evict(_item))//先从lru中剔出
-		{
-			if (lowCorrCache.setCacheItem(_item)) {
-				return true;
-			};
-		}
-		return false;
-	}
-	else
-	{
-		if (lowCorrCache.setCacheItem(_item)) {
-			return true;
-		};
-	}
-}
-
 bool FPCache::evictHighCorrCacheItem()
 {
 	return false;
 }
 
-bool FPCache::evictLowCorrCacheItem()
-{
-	return false;
-}
 
 bool FPCache::resizeHighCorrCache()
 {
 	return false;
 }
 
-bool FPCache::resizeLowCorrCache()
-{
-	return false;
-}
 
 bool FPCache::resizeLRU()
 {
-	size_t lrusize = maxszie - highCorrCache.getCacheSize()-lowCorrCache.getCacheSize();
-
+	size_t lrusize = maxszie - highCorrCache.getCacheSize();
 	if (lrusize<lruCache.getCacheSize())
 	{
 		if (lruCache.evict(lruCache.getCacheSize() - lrusize)) {
+			lruCache.setMaxSize(lrusize);
 			return true;
 		}
 		return false;
 	}
-	else
-	{
-		lruCache.setMaxSize(lrusize);
-	}
+	lruCache.setMaxSize(lrusize);
 	return true;
 }
 
@@ -247,35 +188,18 @@ void FPCache::access(Item _item)
 		// something wrong, maybe a bug.
 		break;
 	}
-	stats = lowCorrCache.findItemState(_item);
-	switch (stats)
-	{
-	case 1:
-		lowCorrCache.access(_item);
-		HIT_NUM++;
-		return;
-	case 2:
-		lowCorrCache.setCacheItem(_item);
-		PAGE_FAULT_NUM++;
-		return;
-	default:
-		// something wrong, maybe a bug.
-		break;
-	}
 	lruCache.access(_item);
 }
 
 bool FPCache::isEmpty()
 {
 	return 0 == highCorrCache.getCacheSize() +
-		lowCorrCache.getCacheSize() +
 		lruCache.getCacheSize();
 }
 
 bool FPCache::isFull()
 {
 	return highCorrCache.getCacheSize() + 
-		lowCorrCache.getCacheSize() + 
 		lruCache.getCacheSize() == maxszie;
 }
 
@@ -293,71 +217,14 @@ fpCache & FPCache::getHighCorrCache()
 {
 	return highCorrCache;
 }
-fpCache & FPCache::getLowCorrCache()
-{
-	return lowCorrCache;
-}
 void FPCache::cacheOrganize()
 {
-	auto it = highCorrCache.getShadowCache().begin();
-	//标记在cache中的items
-	auto findcacheit = highCorrCache.getCache().begin();
-	//遍历cache
-	while (findcacheit != highCorrCache.getCache().end())
+	highCorrCache.orgnaize();
+	LRUStack::iterator it = highCorrCache.getCache().begin();
+	while (it != highCorrCache.getCache().end())
 	{
-		//ShadowCache中存在这个item
-		if (highCorrCache.getShadowCache().find((*findcacheit)) != highCorrCache.getShadowCache().end())
-		{
-			highCorrCache.getShadowCache()[(*findcacheit)] = 1;
-			findcacheit++;
-		}
-		else//ShadowCache中不存在这个item
-		{
-			//擦掉，这里有一个问题，如果，迭代器指向倒数第一个元素，在此处erase，那么将指向end()
-			//随后的迭代器自加后将导致错误。
-			//.erase()函数返回值是其后的元素指针，即是.erase(findcacheit)==findcacheit++；
-			highCorrCache.getCache().erase(findcacheit);
-			//findcacheit++;
-		}
-		
-	}
-	//在此标记shadowCache已经存在于Low缓存的items为1
-	it = lowCorrCache.getShadowCache().begin();
-	while (it != lowCorrCache.getShadowCache().end())
-	{
-		if (lowCorrCache.isItemInCache(it->first)) {
-			it->second = 1;
-		}
-		it++;
-	}
-
-	//整理high cache
-	it = highCorrCache.getShadowCache().begin();
-	while (it!= highCorrCache.getShadowCache().end())
-	{
-		if ((*it).second == 0)
-		{
-			setHighCorrCacheItem((*it).first);
-			(*it).second = 1;
-		}
-		it++;
-	}
-	it = lowCorrCache.getShadowCache().begin();
-	
-	//清空low
-	lowCorrCache.clear();
-	while (it != lowCorrCache.getShadowCache().end())
-	{
-		//原来存在于low缓存中的
-		if ((*it).second == 1) {
-			setLowCorrCacheItem((*it).first);
-		}
-		//原来并不在low缓存但是在lru中发现了
-		if ((*it).second == 0&&lruCache.find((*it).first)!= lruCache.end())
-		{
-			//调入
-			setLowCorrCacheItem((*it).first);
-			(*it).second = 1;
+		if (lruCache.find((*it).item) != lruCache.end()) {
+			lruCache.evict((*it).item);
 		}
 		it++;
 	}

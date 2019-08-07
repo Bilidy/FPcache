@@ -166,9 +166,8 @@ std::vector<Transaction> skew_w_transactions;
 std::vector<Transaction> skew_temptransactions;
 
 size_t skew_room;
-size_t skew_highSizeWeight = 0.2;
-size_t skew_lowSizeWeight = 0.2;
-size_t skew_lruSizeWeight = 0.6;
+size_t skew_highSizeWeight = 0.3;
+size_t skew_lruSizeWeight = 0.7;
 size_t skew_logSize = 1000;
 size_t skew_samplenum = 1000;
 size_t skew_blankSize = 1000;
@@ -192,9 +191,8 @@ std::vector<Transaction> _transactions;
 std::vector<Transaction> _temptransactions;
 
 size_t room;
-size_t highSizeWeight = 0.2;
-size_t lowSizeWeight = 0.2;
-size_t lruSizeWeight = 0.6;
+size_t highSizeWeight = 0.3;
+size_t lruSizeWeight = 0.7;
 size_t logSize = 1000;
 size_t samplenum = 1000;
 size_t blankSize = 1000;
@@ -287,15 +285,6 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
-				else if ("-L" == (*it).first) {
-					if (stor((*it).second, lowSizeWeight)) {
-						cout << "fpcache> low weight:" << lowSizeWeight << endl;
-					}
-					else
-					{
-						cout << "fpcache> please check the parameter:" << (*it).first << endl;
-					}
-				}
 				else if ("-U" == (*it).first) {
 					if (stor((*it).second, lruSizeWeight)) {
 						cout << "fpcache> LRU weight:" << lruSizeWeight << endl;
@@ -366,7 +355,7 @@ void drive_machine() {
 
 
 			LRUStack lruStack(room);
-			FPCache fpCache(room,highSizeWeight, lowSizeWeight,lruSizeWeight);
+			FPCache fpCache(room,highSizeWeight,lruSizeWeight);
 			ARCCache accCache(room);
 
 
@@ -508,15 +497,6 @@ void drive_machine() {
 						cout << "skewtest> please check the parameter:" << (*it).first << endl;
 					}
 				}
-				else if ("-L" == (*it).first) {
-					if (stor((*it).second, skew_lowSizeWeight)) {
-						cout << "skewtest> low weight:" << skew_lowSizeWeight << endl;
-					}
-					else
-					{
-						cout << "skewtest> please check the parameter:" << (*it).first << endl;
-					}
-				}
 				else if ("-U" == (*it).first) {
 					if (stor((*it).second, skew_lruSizeWeight)) {
 						cout << "skewtest> LRU weight:" << skew_lruSizeWeight << endl;
@@ -556,22 +536,22 @@ void drive_machine() {
 				it++;
 			}
 			/*
-				skewtest -r 50 -p transactions.txt -w retail.dat -s 15 -H 3 -L 1 -U 6 -m 1000 -R 0.1
-				skewtest -r 1000 -p kosarak.dat -w retail.dat -s 15 -H 5 -L 0 -U 5 -m 1000 -R 0.1
-				skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.01 -a 1.6
-				skewtest -p kosarak.dat -w retail.dat -H 5 -L 0 -U 5 -m 1000 -R 0.1 -r 500 -s 0.008 -a 1.3
-				skewtest -r 800 -p kosarak.dat -w retail.dat -s 0.02 -H 3 -L 0 -U 7 -m 1000 -R 0.1 -a 2
-				skewtest -r 200 -p T40I10D100K.dat -w retail.dat -s 21 -H 2 -L 0 -U 8 -m 1000 -R 0.1
-				skewtest -r 200 -p retail.dat -w retail.dat -s 21 -H 2 -L 0 -U 8 -m 1000 -R 0.1
-				skewtest -r 200 -p T10I4D100K.dat -w retail.dat -s 20 -H 2 -L 0 -U 8 -m 1000 -R 0.1
+				skewtest -r 50 -p transactions.txt -w retail.dat -s 15 -H 3 -U 6 -m 1000 -R 0.1
+				skewtest -r 1000 -p kosarak.dat -w retail.dat -s 15 -H 5 -U 5 -m 1000 -R 0.1
+				skewtest -p kosarak.dat -w retail.dat -H 3-U 7 -m 1000 -R 0.1 -r 1000 -s 0.01 -a 1.6
+				skewtest -p kosarak.dat -w retail.dat -H 5 -U 5 -m 1000 -R 0.1 -r 500 -s 0.008 -a 1.3
+				skewtest -r 800 -p kosarak.dat -w retail.dat -s 0.02 -H 3 -U 7 -m 1000 -R 0.1 -a 2
+				skewtest -r 200 -p T40I10D100K.dat -w retail.dat -s 21 -H 2 -U 8 -m 1000 -R 0.1
+				skewtest -r 200 -p retail.dat -w retail.dat -s 21 -H 2 -U 8 -m 1000 -R 0.1
+				skewtest -r 200 -p T10I4D100K.dat -w retail.dat -s 20 -H 2 -U 8 -m 1000 -R 0.1
 
-				skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.01 -a 1.6
-				skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
+				skewtest -p kosarak.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.01 -a 1.6
+				skewtest -p kosarak.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
 
-				skewtest -p T40I10D100K.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
-				skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
-				skewtest -p P12.lis -w retail.dat -H 3 -L 0 -U 7 -m 10000 -R 0.1 -r 100000 -s 0.01 -a 1.6
-				skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 1.7 -o m1000_R01_r1000_s0008_a17
+				skewtest -p T40I10D100K.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
+				skewtest -p kosarak.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
+				skewtest -p P12.lis -w retail.dat -H 3 -U 7 -m 10000 -R 0.1 -r 100000 -s 0.01 -a 1.6
+				skewtest -p kosarak.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 1.7 -o m1000_R01_r1000_s0008_a17
 			*/
 			if (skew_needRebuild)//需重建
 			{
@@ -598,7 +578,7 @@ void drive_machine() {
 			}
 
 			LRUStack lruStack(skew_room);
-			FPCache fpCache(skew_room, skew_highSizeWeight, skew_lowSizeWeight, skew_lruSizeWeight);
+			FPCache fpCache(skew_room, skew_highSizeWeight, skew_lruSizeWeight);
 			ARCCache accCache(skew_room);
 
 			fpCache.setMinSupport(skew_supWet*skew_samplenum);

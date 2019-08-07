@@ -28,7 +28,7 @@ struct LRUStack
 		iterator(LRUItem * ptr) :ptr(ptr) {};
 		LRUItem operator*() { return *ptr; };
 		iterator operator++(int) {
-			iterator temp = *this;
+			iterator temp(*this);
 			ptr = ptr->next;
 			return temp;
 		};
@@ -59,6 +59,8 @@ public:
 	void setMaxSize(size_t _maxsize);
 	bool access(Item item);
 
+	bool touch(Item _item);
+
 	uint64_t stateACC();
 	uint64_t stateHIT();
 	uint64_t stateFault();
@@ -66,6 +68,7 @@ public:
 	void flush();
 
 	size_t getCacheSize();
+	size_t getMaxSize();
 
 	iterator find(Item _item);
 
@@ -75,6 +78,7 @@ public:
 	//iterator find(Item _item);
 	bool evict(Item _it);
 	bool evict(int _num);
+	bool inseart(Item _it);
 	friend std::ostream& operator<<(std::ostream&os, LRUStack&lru) {
 		os << "LRU:	ACC:" << lru.stateACC()
 			<< " HIT:" << lru.stateHIT()
@@ -88,6 +92,8 @@ private:
 	bool isEmpty();
 
 	bool evict();
+
+	
 
 	bool pageFault(Item item);
 

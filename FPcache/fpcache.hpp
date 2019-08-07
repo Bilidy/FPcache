@@ -17,24 +17,19 @@ private:
 	uint64_t PAGE_FAULT_NUM;
 
 	fpCache highCorrCache;
-	fpCache lowCorrCache;
+	//fpCache lowCorrCache;
 	LRUStack lruCache;
 
 	
 	//shadowCache currHighCorrShadowCache;
-	//shadowCache currLowCorrShadowCache;
 	
 	std::vector<Transaction> accLog;
 	uint64_t maxLogSize;
 
-	float highLowThreshold;
-
 	float highScaleWeight;//高关联度缓存占比
-	float lowScaleWeight;//低关联度缓存占比
 	float lruScaleWeight;// 无关联 LRU
 	
 	uint64_t highCorrCacheMaxSize;
-	uint64_t lowCorrCacheMaxSize;
 	uint64_t lruCacheMaxSize;
 
 	uint64_t minimum_support_threshold;
@@ -48,7 +43,7 @@ private:
 	}
 
 public:
-	FPCache(size_t maxszie, float _highScaleWeight, float _lowScaleWeight, float _lruScaleWeight);
+	FPCache(size_t maxszie, float _highScaleWeight, float _lruScaleWeight);
 
 	//run FP-Growth analyse
 	bool runFPAnalyse(std::vector<Transaction> _accLog, std::set<Pattern>& patterns);
@@ -58,21 +53,14 @@ public:
 	//input:fp pattern 
 	//output:high cache,low cache
 	bool procPattern(std::vector<Pattern>& patterns, 
-		shadowCache& _shadowHigh, 
-		shadowCache& _shadowLow);
+		shadowCache& _shadowHigh);
 
 	//get the item lists that should be cached or evicted
 	bool getCacheDelta(
 		shadowCache& _shadowHigh, 
-		shadowCache& _shadowLow, 
 		cacheDelta& _inHighCache,
-		cacheDelta& _outHighCache,
-		cacheDelta& _inLowCache,
-		cacheDelta& _outLowCache);
+		cacheDelta& _outHighCache);
 
-	//set the size of High/Low Corr Cache
-	void setHighCorrCacheMaxSize(uint64_t _HighCorrCacheSize);
-	void setLowCorrCacheMaxSize(uint64_t _LowCorrCacheSize);
 
 	//set the max size of access log
 	void setMaxLogSize(uint64_t _logSize);
@@ -85,15 +73,12 @@ public:
 
 	//put item into cache
 	bool setHighCorrCacheItem(Item _item);
-	bool setLowCorrCacheItem(Item _item);
 
 	//evict item from cache
 	bool evictHighCorrCacheItem();
-	bool evictLowCorrCacheItem();
 
 	//risize cache dynamicly
 	bool resizeHighCorrCache();
-	bool resizeLowCorrCache();
 	bool resizeLRU();
 	
 	//access the Item
@@ -108,8 +93,6 @@ public:
 
 	void appendLogTrans(Transaction _trans);
 	fpCache& getHighCorrCache();
-
-	fpCache & getLowCorrCache();
 
 	std::vector<Transaction> &getLog() {
 		return accLog;

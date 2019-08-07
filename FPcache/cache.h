@@ -1,5 +1,6 @@
 #include <map>
 #include <vector>
+#include "lru.hpp"
 
 
 using Item = std::string;
@@ -7,19 +8,18 @@ using FPcache = std::vector<Item>;
 using shadowCache = std::map<Item, uint16_t>;
 using cacheType = bool;
 
-
- #define H_type true
-#define L_type false
-
 struct fpCache {
 private:
 
 	uint64_t maxszie;
 	//uint64_t size;
 
-	FPcache cache;
+	//FPcache cache;
 	shadowCache ShadowCache;
 	cacheType type;
+
+	LRUStack cache;
+
 public:
 
 	fpCache(uint64_t _maxszie, cacheType _type);
@@ -29,18 +29,17 @@ public:
 
 	uint64_t getMaxCacheSize();
 
-	void setShadowCache(shadowCache _ShadowCache);
+	void setShadowCache(const shadowCache _ShadowCache);
 
 	shadowCache & getShadowCache();
 
-	FPcache & getCache();
+	LRUStack & getCache();
 	uint64_t getMaxSize();
 	bool isItemInCache(Item _item);
 
 	bool setCacheItem(Item _item);
 	bool evictCacheItem(Item _item);
-
-	void stateReset();
+	void orgnaize();
 
 	int findItemState(Item _item);
 

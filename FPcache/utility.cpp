@@ -7,6 +7,7 @@
 #include"fpcache.hpp"
 #include <stdlib.h>
 #include <fstream>
+#include <windows.h>
 #define WINDOW 128
 
 using std::cout;
@@ -138,7 +139,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
-						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
+						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache());
 						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
 						fpcahe.cacheOrganize();
 
@@ -162,7 +163,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
-						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
+						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache());
 						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
 						fpcahe.cacheOrganize();
 
@@ -327,35 +328,34 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 						sampCounter = 0;
 						thenext = 1;
 						/*************/
-						//std::set<Pattern> patterns;
-						//std::vector<Pattern> sortedPatterns;
+						DWORD StartTime = ::GetTickCount();
 						fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.sortPatternsBySup(sortedPatterns, patterns);
-						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
-						//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
+						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache());
 						fpcahe.cacheOrganize();
-
+						DWORD EndTime = ::GetTickCount();
+						cout << "	*耗时" << EndTime - StartTime << "ms" << endl;
 						/***********************************************************/
 						//cout << fpcahe << "	" << fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() << "	sample num:" << samplingTrans.size() << "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
 						//cout << lru  << endl;
 						//cout << "ARC:	hit ratio:"; accache.getHitRatio(); cout << endl;
 
-						cout << "FPC:	ACC:" << fpcahe.stateACC() - FPClast.lastStateAcc
-							<< " HIT:" << fpcahe.stateHIT() - FPClast.lastStateHit
-							<< " FAULT:" << fpcahe.stateFault() - FPClast.lastStateMis
-							<< "	hit ratio:" << ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 << "%	"
+						cout << "FPC:	ACC:" << fpcahe.stateACC()
+							<< " HIT:" << fpcahe.stateHIT()
+							<< " FAULT:" << fpcahe.stateFault()
+							<< "	hit ratio:" << ((float)(fpcahe.stateHIT())) / (fpcahe.stateACC()) * 100 << "%	"
 							<< fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize()
 							<< "	sample num:" << samplingTrans.size()
 							<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
-						cout << "LRU:	ACC:" << lru.stateACC() - LRUlast.lastStateAcc
-							<< " HIT:" << lru.stateHIT() - LRUlast.lastStateHit
-							<< " FAULT:" << lru.stateFault() - LRUlast.lastStateMis
-							<< "	hit ratio:" << ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << "%" << endl;
-						cout << "ARC:	ACC:" << accache.getAcc() - ARClast.lastStateAcc
-							<< " HIT:" << accache.getHit() - ARClast.lastStateHit
-							<< " FAULT:" << accache.getMis() - ARClast.lastStateMis
-							<< "	hit ratio:" << ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << "%" << endl;
+						cout << "LRU:	ACC:" << lru.stateACC()
+							<< " HIT:" << lru.stateHIT()
+							<< " FAULT:" << lru.stateFault()
+							<< "	hit ratio:" << ((float)(lru.stateHIT())) / ((lru.stateACC())) * 100 << "%" << endl;
+						cout << "ARC:	ACC:" << accache.getAcc()
+							<< " HIT:" << accache.getHit()
+							<< " FAULT:" << accache.getMis()
+							<< "	hit ratio:" << ((float)(accache.getHit()) / (accache.getAcc())) * 100 << "%" << endl;
 						cout << endl;
 
 						/*oFile.open(outputfile, ios::out | ios::app);
@@ -377,8 +377,6 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 
 
 						samplingTrans.clear();
-						/**********************************************************/
-						/*************/
 						continue;
 					}
 					//if (sampCounter == M * rate)//采样完了
@@ -390,7 +388,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 					//	fpcahe.setMinSupport(fpcahe.getMinSupportWet()*samplingTrans.size());
 					//	fpcahe.runFPAnalyse(samplingTrans, patterns);
 					//	fpcahe.sortPatternsBySup(sortedPatterns, patterns);
-					//	fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
+					//	fpcahe.procPattern(sortedPatterns,fpcahe.getHighCorrCache().getShadowCache());
 					//	//cout << fpcahe.getHighCorrCache().getShadowCache().size() << endl;
 					//	fpcahe.cacheOrganize();
 

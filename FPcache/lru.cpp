@@ -27,7 +27,9 @@ LRUStack::LRUStack(size_t _maxsize) :
 }
 void LRUStack::setMaxSize(size_t _maxsize) {
 	maxszie = _maxsize;
+	//std::cout << "after" << maxszie << std::endl;
 }
+
 bool LRUStack::isFull()
 {
 	return (maxszie== stacksize);
@@ -37,6 +39,9 @@ bool LRUStack::isEmpty()
 {
 	return (stacksize==0);
 }
+
+
+
 bool LRUStack::evict()
 {
 	if(!tail)//tail is a nullpter
@@ -120,9 +125,68 @@ bool LRUStack::evict(int _num)
 	{
 		evict();
 	}
-	return false;
+	return true;
 }
 
+bool LRUStack::inseart(Item _item) {
+	if (isFull()) {//满，驱逐
+		if (!evict())
+			return false;
+
+		LRUItem *nitem = new LRUItem(_item);//申请新节点
+		if (!nitem)
+			return false;
+		if (root)//存在后续结点
+		{
+			root->pre = nitem;
+			nitem->next = root;
+			nitem->pre = nullptr;
+			root = nitem;
+		}
+		else {//不存在后续结点
+			nitem->next = nullptr;
+			nitem->pre = nullptr;
+			root = nitem;
+			tail = nitem;
+		}
+
+		ptrvec[_item] = nitem;
+		stacksize++;
+		return true;
+	}
+	else if (isEmpty()) {//列表为空+1
+		LRUItem* item = new LRUItem(_item);
+
+		if (!item)
+			return false;
+
+		//item->next = tail;
+		/******************/
+		item->next = nullptr;
+		item->pre = nullptr;
+		/******************/
+		tail = item;
+		root = item;
+
+		ptrvec[_item] = item;
+		stacksize++;
+		return true;
+	}
+	else {//不空，不满。
+		LRUItem *nitem = new LRUItem(_item);
+		if (!nitem)
+			return false;
+
+		root->pre = nitem;
+		nitem->next = root;
+		root = nitem;
+		nitem->pre = nullptr;
+
+		ptrvec[_item] = nitem;
+		stacksize++;
+		return true;
+	}
+}
 bool LRUStack::pageFault(Item _item)
 {
 	PAGE_FAULT_NUM++;
@@ -238,7 +302,52 @@ bool LRUStack::access(Item _item)
 	else
 		return false;
 }
+bool LRUStack::touch(Item _item)
+{
+	if (_item != "")
+	{
+		auto it = ptrvec.find(_item);
+		if (it != ptrvec.end()) {
+			if ((*it).second == root) {//头节点，不用做处理
+				return true;
+			}
+			if ((*it).second == tail) {//尾结点
 
+				if ((*it).second->pre) {//存在前驱结点，或者说并不是只有一个结点
+					(*it).second->pre->next = nullptr;
+					//(*it).second->pre->next = (*it).second->next;
+					tail = (*it).second->pre;
+					(*it).second->pre = nullptr;
+					(*it).second->next = root;
+					root->pre = (*it).second;
+					root = (*it).second;
+					return true;
+				}
+				else {//不存在前驱结点，或者说只有一个结点，无需处理
+					return true;
+				}
+			}
+			else//命中其他结点
+			{
+				(*it).second->pre->next = (*it).second->next;
+				(*it).second->next->pre = (*it).second->pre;
+
+				root->pre = (*it).second;
+				(*it).second->pre = nullptr;
+				(*it).second->next = root;
+				root->pre = (*it).second;
+				root = it->second;
+				return true;
+			}//LRUItem Item=(*(*it).second);			
+		}
+		else {
+			pageFault(_item);
+			return true;
+		}
+	}
+	else
+		return false;
+}
 uint64_t LRUStack::stateACC()
 {
 	return ACC_NUM;
@@ -270,6 +379,11 @@ void LRUStack::flush()
 size_t LRUStack::getCacheSize()
 {
 	return stacksize;
+}
+
+size_t LRUStack::getMaxSize()
+{
+	return maxszie;
 }
 
 LRUStack::iterator  LRUStack::find(Item _item) {
