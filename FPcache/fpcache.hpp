@@ -6,6 +6,15 @@
 using shadowCache=std::map<Item,uint16_t>;
 //using fpCache = std::map<Item, uint16_t>;
 using cacheDelta=std::vector<Item>;
+struct metadata
+{
+	uint64_t size;
+	uint64_t accnum;
+	uint64_t weidis;
+	uint64_t lastacc;
+	uint64_t lastdis;
+	uint64_t dis;
+};
 
 struct FPCache
 {
@@ -47,8 +56,12 @@ public:
 
 	//run FP-Growth analyse
 	bool runFPAnalyse(std::vector<Transaction> _accLog, std::set<Pattern>& patterns);
+
+	void valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated);
 	
-	void sortPatternsBySup(std::vector<Pattern>& sortedPatterns,std::set<Pattern>& patterns);
+	void sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns);
+	void sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns);
+	//void sortPatternsBySup(std::vector<Pattern>& sortedPatterns,std::set<Pattern>& patterns);
 
 	//input:fp pattern 
 	//output:high cache,low cache

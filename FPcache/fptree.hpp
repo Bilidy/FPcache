@@ -1,5 +1,5 @@
 #ifndef FPTREE_HPP
-#define FPTREE_HPP
+
 
 #include <cstdint>
 #include <map>
@@ -9,11 +9,21 @@
 #include <vector>
 #include <utility>
 
+struct metaPattern
+{
+	double val;
+	double accden;
+	uint64_t size;
+	uint16_t sup;
+	uint16_t mean;
+	uint16_t var;
+};
 
 using Item = std::string;
 using Transaction = std::vector<Item>;
 using TransformedPrefixPath = std::pair<std::vector<Item>, uint64_t>;
 using Pattern = std::pair<std::set<Item>, uint64_t>;
+using valuatedPattern = std::pair<std::set<Item>, metaPattern>;
 
 
 struct FPNode {
@@ -41,3 +51,4 @@ std::set<Pattern> fptree_growth(const FPTree&);
 
 
 #endif  // FPTREE_HPP
+#define FPTREE_HPP

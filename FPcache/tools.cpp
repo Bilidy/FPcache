@@ -174,6 +174,7 @@ size_t skew_blankSize = 1000;
 string defaultOutputName = "defaultOutput.csv";
 double skew_samplingRate = 0.1;
 double skew_alpha = 0.7;
+int TYPE=0;
 
 bool skew_needRebuild = true;
 bool skew_w_needRebuild = true;
@@ -321,6 +322,12 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if ("-o" == (*it).first) {
+					if ((*it).second != "") {
+						defaultOutputName = (*it).second + ".csv";
+					}
+					cout << "fpcache> result output:" << defaultOutputName << endl;
+				}
 				it++;
 			}
 /******************************************************************************************************************************/
@@ -339,7 +346,8 @@ void drive_machine() {
 				fpcache -p P4.lis -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 100000 -s 0.002 -a 0.7
 				fpcache -p P4.lis -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 10000 -s 0.0005 -a 0.7
 				fpcache -r 200 -p retail.dat -s 0.008 -H 2 -L 0 -U 8 -m 1000 -R 0.1
-
+				fpcache -p kosarak.dat -H 2 -L 0 -U 8 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 1.2 -o type2_fp_m1000_R01_r1000_s0008_a12
+				fpcache -p kosarak.dat -H 2 -L 0 -U 8 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 1.2 -o type1_fp_m1000_R01_r1000_s0008_a12
 				T10I4D100K
 				T40I10D100K
 				retail
@@ -358,8 +366,7 @@ void drive_machine() {
 			FPCache fpCache(room,highSizeWeight,lruSizeWeight);
 			ARCCache accCache(room);
 
-
-			fpCache.setMinSupport(supWet*samplenum);
+			fpCache.setMinSupport(ceil(supWet*samplenum));
 			fpCache.setMinSupportWet(supWet);
 			//std::set<Pattern> patterns;
 			fpCache.setMaxLogSize(logSize);
@@ -369,7 +376,7 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, accCache, _transactions, temptrans, samplenum/samplingRate, samplingRate,alpha);
+			uniAccess(lruStack, fpCache, accCache, _transactions, temptrans, samplenum/samplingRate, samplingRate,alpha,defaultOutputName);
 
 
 			//auto transIt = _transactions.begin();
@@ -533,6 +540,15 @@ void drive_machine() {
 						cout << "skewtest> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if (("-t" == (*it).first)) {
+					if (TYPE = atoi((*it).second.c_str())) {
+						cout << "skewtest> TYPE:" << TYPE << endl;
+					}
+					else
+					{
+						cout << "skewtest> please check the parameter:" << (*it).first << endl;
+					}
+				}
 				it++;
 			}
 			/*
@@ -552,6 +568,8 @@ void drive_machine() {
 				skewtest -p kosarak.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.5 -r 400 -s 0.01 -a 1.6
 				skewtest -p P12.lis -w retail.dat -H 3 -U 7 -m 10000 -R 0.1 -r 100000 -s 0.01 -a 1.6
 				skewtest -p kosarak.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 1.7 -o m1000_R01_r1000_s0008_a17
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 2000 -R 0.2 -r 500 -s 0.008 -a 1.7 -o type2_t64_sk_H2_U8_m2000_R02_r500_s0008_a17
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 400 -s 0.008 -a 1.7 -o type2_t16_sk_H2_U8_m1000_R01_r400_s0008_a17
 			*/
 			if (skew_needRebuild)//需重建
 			{
@@ -590,16 +608,19 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, accCache, 
-				skew_transactions, 
-				skew_w_transactions,
-				temptrans, 
-				skew_samplenum / skew_samplingRate,
-				skew_samplingRate,
-				skew_alpha, 
-				skew_jump_low,
-				skew_jump_high,
-				defaultOutputName);
+			uniAccess(lruStack, fpCache, accCache,
+					skew_transactions,
+					skew_w_transactions,
+					temptrans,
+					skew_samplenum / skew_samplingRate,
+					skew_samplingRate,
+					skew_alpha,
+					skew_jump_low,
+					skew_jump_high,
+					defaultOutputName,
+					TYPE
+				);
+			
 
 			cout << "Total:\n" << fpCache << endl;
 			printf("args:	%s\n", comm_args_buffer);
@@ -623,5 +644,8 @@ void drive_machine() {
 
 int main()
 {
+	//cout << (int)2.6 << " " << (int)2.3<<endl;
+
+
 	drive_machine();
 }

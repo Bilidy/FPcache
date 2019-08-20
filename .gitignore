@@ -261,3 +261,6 @@ __pycache__/
 *.pyc
 /FPcache/m1000_R01_r1000_s0008_a17_1000.csv
 /FPcache/m1000_R01_r1000_s0008_a17_10000.csv
+/FPcache/m1000_R01_r1000_s0008_a17.csv
+/FPcache/type1_t32_fp_H2_U8_m1000_R01_r1000_s0008_a07.csv
+/FPcache/type1_t64_sk_H2_U8_m1000_R01_r400_s0008_a17.csv

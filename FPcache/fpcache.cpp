@@ -34,27 +34,97 @@ bool FPCache::runFPAnalyse(std::vector<Transaction> _accLog,std::set<Pattern>& p
 	else
 		return false;
 }
+void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated)
+{
+	valuated.clear();
+	std::set<Pattern>::iterator it = patterns.begin();
+	while (it != patterns.end())
+	{
+		double sum = 0;//均值
+		std::set<Item>::iterator its = (*it).first.begin();
+		while (its != (*it).first.end())
+		{
+			sum += metadata[(*its)].weidis;
+			its++;
+		}
+
+		double meanDis = sum / (*it).first.size();
+
+		double vansum = 0;//方差
+		its = (*it).first.begin();
+		while (its != (*it).first.end())
+		{
+			uint64_t X= metadata[(*its)].weidis;
+			vansum += (X- meanDis)*(X - meanDis);
+			its++;
+		}
+		double variance= vansum / (*it).first.size();
+
+		uint64_t totalsize = 0;
+		its = (*it).first.begin();
+		while (its != (*it).first.end())
+		{
+			uint64_t X = metadata[(*its)].size;
+			totalsize += X;
+			its++;
+		}
+
+		uint64_t accnum = 0;
+		its = (*it).first.begin();
+		while (its != (*it).first.end())
+		{
+			uint64_t X = metadata[(*its)].accnum;
+			accnum += X;
+			its++;
+		}
+
+		metaPattern m;
+		m.mean = meanDis;
+		m.sup = (*it).second;
+		m.var = sqrt(variance);
+		m.size = totalsize;
+		m.accden = ((double)accnum) / m.size;
+		
+		if ((double)m.var / m.mean <2.0&&m.var!=0)
+		{
+			valuatedPattern valuatedpattern;//{ {(*it).first} ,m };
+			valuatedpattern.first = (*it).first;
+			//m.val = (m.mean*m.mean)/m.var;
+			m.val = (m.sup * 10 * (m.mean / m.var)+(1.0/m.sup)*(10 * (m.mean / m.var) + m.sup )*(10 * (m.mean / m.var) + m.sup));
+			if (m.val>=120)
+			{
+				valuatedpattern.second = m;
+				valuated.push_back(valuatedpattern);
+
+			}
+		}
+		
+		it++;
+	}
+
+}
 //sort Patterns By Support form big to little
-void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns)
+void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns)
 {
 	sortedPatterns.clear();
-	uint64_t MaxSupport = minimum_support_threshold;
+	double MaxValue;
 	Pattern tempTrans;
 	
 	shadowCache tempScache;
 
 	while (patterns.size() && sortedPatterns .size()<=2000&& (tempScache.size() < highCorrCache.getMaxCacheSize()))
 	{
-		MaxSupport = 0;
+		MaxValue = 0.0;
 		auto tempit = patterns.end();
 		auto it = patterns.begin();
 		while (it != patterns.end())
 		{
-			if ((*it).second >= MaxSupport)
+			if ((*it).second.val >= MaxValue)
 			{
 				tempit = it;
-				tempTrans = (*it);
-				MaxSupport = (*it).second;
+				tempTrans.first = (*it).first;
+				tempTrans.second = (*it).second.val;
+				MaxValue = (*it).second.val;
 			}
 			it++;
 		}
@@ -78,7 +148,50 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 		//已解决
 	}
 }
+void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns)
+{
+	sortedPatterns.clear();
+	uint64_t MaxSupport = minimum_support_threshold;
+	Pattern tempTrans;
 
+	shadowCache tempScache;
+
+	while (patterns.size() && sortedPatterns.size() <= 2000 && (tempScache.size() < highCorrCache.getMaxCacheSize()))
+	{
+		MaxSupport = 0;
+		auto tempit = patterns.end();
+		auto it = patterns.begin();
+		while (it != patterns.end())
+		{
+			if ((*it).second >= MaxSupport)
+			{
+				tempit = it;
+				tempTrans = (*it);
+				MaxSupport = (*it).second;
+			}
+			it++;
+		}
+		if (tempTrans.first.size() > 1)
+		{
+			sortedPatterns.push_back(tempTrans);
+			auto its = tempTrans.first.begin();
+			while (its != tempTrans.first.end())
+			{
+				if (tempScache.find(*its) == tempScache.end()) {
+					tempScache.insert(std::pair<Item, uint64_t>((*its), 0));
+				}
+				its++;
+			}
+		}
+		if (tempit != patterns.end()) {
+			patterns.erase(tempit);
+		}
+		//82.499%
+		//skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 0.3 会报错？？？调查
+		//已解决
+	}
+}
+//规则内部的各项重用距离和min重用距离之差之和，访问频率和文件大小
 bool FPCache::procPattern(std::vector<Pattern>& patterns, shadowCache& _shadowHigh)
 {
 	_shadowHigh.clear();

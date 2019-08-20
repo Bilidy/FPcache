@@ -14,7 +14,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	std::vector<Transaction>&temptrans,
 	size_t M,
 	float rate,
-	float a);
+	float a,
+	string outputfile);
 
 void uniAccess(LRUStack& lru,FPCache&fpcahe, ARCCache&accache,
 	std::vector<Transaction>&transactions,
@@ -25,7 +26,8 @@ void uniAccess(LRUStack& lru,FPCache&fpcahe, ARCCache&accache,
 	float a	,
 	size_t skew_jump_low,
 	size_t skew_jump_high,
-	string output);
+	string output,
+	int _type);
 
 void skewWorkLoad(std::vector<Transaction>& skew_transactions, size_t skew_low, size_t skew_high);
 #endif // !UTIL_H_
