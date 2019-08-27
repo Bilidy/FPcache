@@ -5,6 +5,8 @@
 #include "fpcache.hpp"
 #include "ARCCache.h"
 #include <stdlib.h>
+
+
 double generateGaussianNoise(double mu, double sigma);
 int radmGen(size_t low, size_t high, int);
 int sampTheNext(float a, float rate, size_t curr, size_t M);
@@ -15,7 +17,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,
 	size_t M,
 	float rate,
 	float a,
-	string outputfile);
+	string outputfile,
+	int _type);
 
 void uniAccess(LRUStack& lru,FPCache&fpcahe, ARCCache&accache,
 	std::vector<Transaction>&transactions,

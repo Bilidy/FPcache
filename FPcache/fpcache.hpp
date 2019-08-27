@@ -6,15 +6,8 @@
 using shadowCache=std::map<Item,uint16_t>;
 //using fpCache = std::map<Item, uint16_t>;
 using cacheDelta=std::vector<Item>;
-struct metadata
-{
-	uint64_t size;
-	uint64_t accnum;
-	uint64_t weidis;
-	uint64_t lastacc;
-	uint64_t lastdis;
-	uint64_t dis;
-};
+
+
 
 struct FPCache
 {
@@ -60,6 +53,7 @@ public:
 	void valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated);
 	
 	void sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns);
+	void sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns);
 	void sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns);
 	//void sortPatternsBySup(std::vector<Pattern>& sortedPatterns,std::set<Pattern>& patterns);
 
@@ -85,7 +79,7 @@ public:
 	float getMinSupportWet();
 
 	//put item into cache
-	bool setHighCorrCacheItem(Item _item);
+	bool setHighCorrCacheItem(Entry entry);
 
 	//evict item from cache
 	bool evictHighCorrCacheItem();
@@ -95,7 +89,7 @@ public:
 	bool resizeLRU();
 	
 	//access the Item
-	void access(Item _item);
+	void access(Entry entry);
 
 	//is cache empty/full?
 	bool isEmpty();
@@ -111,7 +105,7 @@ public:
 		return accLog;
 	}
 
-	void cacheOrganize();
+	void cacheOrganize(std::map<Item, metadata> &metadata_hashtable);
 
 	uint64_t stateACC();
 

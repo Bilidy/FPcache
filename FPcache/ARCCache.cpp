@@ -1,4 +1,5 @@
 #include "ARCCache.h"
+#include "common.h"
 
 ARCCache::ARCCache(int size) 
 {
@@ -34,8 +35,9 @@ uint64_t ARCCache::getMis()
 	return cacheRequest-cacheHit;
 }
 
-void ARCCache::ARCreference(int newEntry)
+void ARCCache::ARCreference(Entry entry)
 {
+	int newEntry= stoi(entry.item);
 	cacheRequest++;
 	/* Case 1: x_t is in T1 or T2. A cache hit has occured: */
 	if (T1map.find(newEntry) != T1map.end() || T2map.find(newEntry) != T2map.end())
@@ -72,7 +74,7 @@ void ARCCache::ARCreference(int newEntry)
 			delta = B2queue.size() / B1queue.size();
 		}
 		p = min((p + delta), maxSize);
-		REPLACE(newEntry);
+		REPLACE(entry);
 
 		// Move xt from B1 to the MRU position in T2 (also fetch xt to the cache)
 
@@ -96,7 +98,7 @@ void ARCCache::ARCreference(int newEntry)
 			delta = B1queue.size() / B2queue.size();
 		}
 		p = max(p - delta, 0);
-		REPLACE(newEntry);
+		REPLACE(entry);
 
 		// Move x_t from B2 to the MRU position in T2
 		B2queue.erase(B2map[newEntry]);
@@ -117,7 +119,7 @@ void ARCCache::ARCreference(int newEntry)
 				int b1LRU = B1queue.back();
 				B1queue.pop_back();
 				B1map.erase(b1LRU);
-				REPLACE(newEntry);
+				REPLACE(entry);
 			}
 			else
 			{
@@ -152,7 +154,7 @@ void ARCCache::ARCreference(int newEntry)
 					}
 					////////////////////////////
 				}
-				REPLACE(newEntry);
+				REPLACE(entry);
 			}
 		}
 		// Finally, fetch x_t to the cache and move it to MRU position in T1
@@ -162,8 +164,9 @@ void ARCCache::ARCreference(int newEntry)
 	}
 }
 
-void ARCCache::REPLACE(int newEntry)
+void ARCCache::REPLACE(Entry entry)
 {
+	int newEntry= stoi(entry.item);
 	if ((T1queue.size() != 0) && ((T1queue.size() > p) || (B2map.find(newEntry) != B2map.end() && T1queue.size() == p)))
 	{
 		int t1LRU = T1queue.back();

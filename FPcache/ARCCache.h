@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
+#include "common.h"
 
 using namespace std;
 
@@ -10,12 +11,12 @@ class ARCCache
 {
 public:
 	ARCCache(int size);
-	void ARCreference(int newEntry);
+	void ARCreference(Entry entry);
 	void getHitRatio();
 	uint64_t getHit();
 	uint64_t getAcc();
 	uint64_t getMis();
-	void REPLACE(int newEntry);
+	void REPLACE(Entry entry);
 
 private:
 	int p = 0;

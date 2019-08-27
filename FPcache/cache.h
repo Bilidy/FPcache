@@ -16,6 +16,7 @@ private:
 
 	//FPcache cache;
 	shadowCache ShadowCache;
+	shadowCache CacheOrgNum;
 	cacheType type;
 
 	LRUStack cache;
@@ -37,13 +38,13 @@ public:
 	uint64_t getMaxSize();
 	bool isItemInCache(Item _item);
 
-	bool setCacheItem(Item _item);
+	bool setCacheItem(Entry entry);
 	bool evictCacheItem(Item _item);
-	void orgnaize();
+	void orgnaize(std::map<Item, metadata> &metadata_hashtable);
 
 	int findItemState(Item _item);
 
-	void access(Item _item);
+	void access(Entry entry);
 
 	void clear();
 };

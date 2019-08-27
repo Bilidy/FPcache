@@ -1,4 +1,5 @@
 #include"cache.h"
+#include"common.h"
 
 fpCache::fpCache(uint64_t _maxszie, cacheType _type):cache(_maxszie)
 {
@@ -53,13 +54,13 @@ bool fpCache::isItemInCache(Item _item) {
 	return false;
 }
 
-bool fpCache::setCacheItem(Item _item)
+bool fpCache::setCacheItem(Entry entry)
 {
 	if (cache.getCacheSize()<maxszie){
-		if (ShadowCache.find(_item)!= ShadowCache.end())//should in cache
+		if (ShadowCache.find(entry.item)!= ShadowCache.end())//should in cache
 		{
-			ShadowCache.find(_item)->second = 1;
-			cache.inseart(_item);
+			ShadowCache.find(entry.item)->second = 1;
+			cache.inseart(entry);
 			//size++;
 			return true;
 		}
@@ -91,8 +92,13 @@ bool fpCache::evictCacheItem(Item _item)
 	return false;
 }
 
-void fpCache::orgnaize()
+void fpCache::orgnaize(std::map<Item, metadata> &metadata_hashtable)
 {
+	//setMaxCacheSize(maxszie*0.98);
+	while (cache.getCacheSize()> cache.getMaxSize())
+	{
+		if (!cache.evict(1)) { break; };
+	}
 	if (ShadowCache.empty())
 	{
 		return;
@@ -100,15 +106,37 @@ void fpCache::orgnaize()
 	auto it = ShadowCache.begin();
 	while (it != ShadowCache.end())
 	{
-		//未在cache中发现
+		//在cache中发现
 		if (cache.find(it->first)!=cache.end()) {
 			cache.touch(it->first);
 		}
-		else//在cache中发现
+		else//未在cache中发现
 		{
-			cache.inseart(it->first);
+			Entry entry;
+			entry.item = it->first;
+			entry.size = metadata_hashtable[it->first].size;
+			cache.inseart(entry);
 			//那就在吧
 		}
+		CacheOrgNum[it->first] = STAY;
+		it++;
+	}
+	it = CacheOrgNum.begin();
+	while (it!= CacheOrgNum.end())
+	{
+		it->second--;
+		
+		if (cache.find(it->first)== cache.end())
+		{
+			//因为在上一步中inseart之后cache会出现移出，CacheOrgNum数据未更新
+			CacheOrgNum[it->first] = 0;
+		}
+		else if (it->second <= 0)
+		{
+			cache.evict(it->first);
+			CacheOrgNum[it->first] = 0;
+		}
+
 		it++;
 	}
 
@@ -126,7 +154,7 @@ int fpCache::findItemState(Item _item)
 	return 0;//should not in this cache.
 }
 
-void fpCache::access(Item _item)
+void fpCache::access(Entry entry)
 {
 	//ACC_NUM++;
 	//auto it = ShadowCache.find(_item);

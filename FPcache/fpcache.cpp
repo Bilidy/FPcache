@@ -85,13 +85,14 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 		m.size = totalsize;
 		m.accden = ((double)accnum) / m.size;
 		
-		if ((double)m.var / m.mean <2.0&&m.var!=0)
+		if ((double)m.var / m.mean <1.0&&m.var!=0)
 		{
 			valuatedPattern valuatedpattern;//{ {(*it).first} ,m };
 			valuatedpattern.first = (*it).first;
 			//m.val = (m.mean*m.mean)/m.var;
-			m.val = (m.sup * 10 * (m.mean / m.var)+(1.0/m.sup)*(10 * (m.mean / m.var) + m.sup )*(10 * (m.mean / m.var) + m.sup));
-			if (m.val>=120)
+			//m.val = (m.sup * 10 * (m.mean / m.var)+(1.0/m.sup)*(10 * (m.mean / m.var) + m.sup )*(10 * (m.mean / m.var) + m.sup));
+			m.val = m.accden*(m.sup*(m.mean*m.mean) / m.var);
+			if (m.val>=200)
 			{
 				valuatedpattern.second = m;
 				valuated.push_back(valuatedpattern);
@@ -104,16 +105,65 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 
 }
 //sort Patterns By Support form big to little
+void FPCache::sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns)
+{
+	sortedPatterns.clear();
+	double MaxDensity;
+	Pattern tempTrans;
+	
+	shadowCache tempScache;
+	uint64_t sizesum = 0;
+
+	while (patterns.size() && sortedPatterns .size()<=2000&& (tempScache.size() < highCorrCache.getMaxCacheSize()))
+	{
+		
+		MaxDensity = 0.0;
+		auto tempit = patterns.end();
+		auto it = patterns.begin();
+		while (it != patterns.end())
+		{
+			if ((*it).second.accden >= MaxDensity)
+			{
+				tempit = it;
+				tempTrans.first = (*it).first;
+				tempTrans.second = (*it).second.accden;
+				MaxDensity = (*it).second.accden;
+			}
+			it++;
+		}
+		if (tempTrans.first.size() > 1)//至少是2模式
+		{
+			sortedPatterns.push_back(tempTrans);
+			auto its = tempTrans.first.begin();
+			while (its != tempTrans.first.end())
+			{
+				if (tempScache.find(*its) == tempScache.end()) {
+					tempScache.insert(std::pair<Item,uint64_t>((*its), 0));
+					sizesum += tempit->second.size;
+				}
+				its++;
+			}
+		}
+		if (tempit != patterns.end()) {
+			patterns.erase(tempit);
+		}
+		//82.499%
+		//skewtest -p kosarak.dat -w retail.dat -H 3 -L 0 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 0.3 会报错？？？调查
+		//已解决
+	}
+}
 void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns)
 {
 	sortedPatterns.clear();
 	double MaxValue;
 	Pattern tempTrans;
-	
-	shadowCache tempScache;
 
-	while (patterns.size() && sortedPatterns .size()<=2000&& (tempScache.size() < highCorrCache.getMaxCacheSize()))
+	shadowCache tempScache;
+	uint64_t sizesum = 0;
+
+	while (patterns.size() && sortedPatterns.size() <= 2000 && (tempScache.size() < highCorrCache.getMaxCacheSize()))
 	{
+
 		MaxValue = 0.0;
 		auto tempit = patterns.end();
 		auto it = patterns.begin();
@@ -128,14 +178,15 @@ void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vecto
 			}
 			it++;
 		}
-		if (tempTrans.first.size() > 1)
+		if (tempTrans.first.size() > 1)//至少是2模式
 		{
 			sortedPatterns.push_back(tempTrans);
 			auto its = tempTrans.first.begin();
 			while (its != tempTrans.first.end())
 			{
 				if (tempScache.find(*its) == tempScache.end()) {
-					tempScache.insert(std::pair<Item,uint64_t>((*its), 0));
+					tempScache.insert(std::pair<Item, uint64_t>((*its), 0));
+					sizesum += tempit->second.size;
 				}
 				its++;
 			}
@@ -240,14 +291,14 @@ float FPCache::getMinSupportWet()
 }
 
 //将Item调入HighCorrCache，在此之前要将其从lru中抽取出来。
-bool FPCache::setHighCorrCacheItem(Item _item)
+bool FPCache::setHighCorrCacheItem(Entry entry)
 {
 	//LRUStack::iterator it = lruCache.begin();
 	
-	if (lruCache.find(_item) !=lruCache.end()) {
-		if (lruCache.evict(_item))
+	if (lruCache.find(entry.item) !=lruCache.end()) {
+		if (lruCache.evict(entry.item))
 		{
-			if (highCorrCache.setCacheItem(_item)) {
+			if (highCorrCache.setCacheItem(entry)) {
 				return true;
 			};
 		}
@@ -255,7 +306,7 @@ bool FPCache::setHighCorrCacheItem(Item _item)
 	}
 	else
 	{
-		highCorrCache.setCacheItem(_item);
+		highCorrCache.setCacheItem(entry);
 		return true;
 	}
 }
@@ -277,31 +328,35 @@ bool FPCache::resizeLRU()
 	size_t lrusize = maxszie - highCorrCache.getCacheSize();
 	if (lrusize<lruCache.getCacheSize())
 	{
-		if (lruCache.evict(lruCache.getCacheSize() - lrusize)) {
+		while (lrusize < lruCache.getCacheSize()) {
+			if (!lruCache.evict(1))
+				return false;
+		}
+		/*if (lruCache.evict(lruCache.getCacheSize() - lrusize)) {
 			lruCache.setMaxSize(lrusize);
 			return true;
 		}
-		return false;
+		return false;*/
 	}
 	lruCache.setMaxSize(lrusize);
 	return true;
 }
 
-void FPCache::access(Item _item)
+void FPCache::access(Entry entry)
 {
 	ACC_NUM++;
-	int stats=highCorrCache.findItemState(_item);
+	int stats=highCorrCache.findItemState(entry.item);
 	switch (stats)
 	{
 	case 1:
-		highCorrCache.access(_item);
+		highCorrCache.access(entry);
 		HIT_NUM++;
 		return;
 	default:
 		// something wrong, maybe a bug.
 		break;
 	}
-	lruCache.access(_item);
+	lruCache.access(entry);
 }
 
 bool FPCache::isEmpty()
@@ -330,9 +385,9 @@ fpCache & FPCache::getHighCorrCache()
 {
 	return highCorrCache;
 }
-void FPCache::cacheOrganize()
+void FPCache::cacheOrganize(std::map<Item, metadata> &metadata_hashtable)
 {
-	highCorrCache.orgnaize();
+	highCorrCache.orgnaize(metadata_hashtable);
 	LRUStack::iterator it = highCorrCache.getCache().begin();
 	while (it != highCorrCache.getCache().end())
 	{

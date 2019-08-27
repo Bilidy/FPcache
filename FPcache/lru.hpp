@@ -3,8 +3,7 @@
 #include <vector>
 #include <map>
 #include <memory>
-
-using Item = std::string;
+#include "common.h"
 
 struct LRUItem 
 {
@@ -13,8 +12,10 @@ private:
 public:
 	LRUItem* pre;
 	Item item;
+	uint64_t size;
 	LRUItem* next;
-	LRUItem(Item item);
+	LRUItem(Item item, uint64_t size);
+	LRUItem(Entry entry);
 };
 struct LRUStack
 {
@@ -45,7 +46,7 @@ private:
 	uint64_t HIT_NUM;
 	uint64_t PAGE_FAULT_NUM;
 
-	size_t maxszie;//最大大小限制
+	size_t maxsize;//最大大小限制
 	size_t stacksize;
 
 	LRUItem* root;//头指针交于智能指针托管
@@ -57,9 +58,10 @@ public:
 	LRUStack(size_t _maxsize);
 
 	void setMaxSize(size_t _maxsize);
-	bool access(Item item);
+	//bool access(Item item);
+	bool access(Entry entry);
 
-	bool touch(Item _item);
+	bool touch(Item item);
 
 	uint64_t stateACC();
 	uint64_t stateHIT();
@@ -76,9 +78,9 @@ public:
 	LRUItem * end() { return nullptr; };
 
 	//iterator find(Item _item);
-	bool evict(Item _it);
+	bool evict(Item item);
 	bool evict(int _num);
-	bool inseart(Item _it);
+	bool inseart(Entry entry);
 	friend std::ostream& operator<<(std::ostream&os, LRUStack&lru) {
 		os << "LRU:	ACC:" << lru.stateACC()
 			<< " HIT:" << lru.stateHIT()
@@ -95,7 +97,9 @@ private:
 
 	
 
-	bool pageFault(Item item);
+	//bool pageFault(Item item);
+	bool pageFault(Entry entry);
+	bool isEnough(Entry entry);
 
 	void stateReset();
 };

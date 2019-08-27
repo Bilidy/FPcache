@@ -17,6 +17,7 @@
 #include <set>
 
 #include "util.h"
+#include"common.h"
 
 using Item = std::string;
 using Transaction = std::vector<Item>;
@@ -25,6 +26,7 @@ using Transaction = std::vector<Item>;
 #define COMM_BUFFER_SIZE 21
 #define COMM_ARGS_BUFFER_SIZE 191
 #define DEFAULT_SUPPORT 0.02;
+
 
 
 
@@ -110,6 +112,59 @@ int stor(string numstr, size_t& num) {
 	}
 	return 1;
 }
+string args2fn(string comd,std::set<pair<string, string>> args) {
+
+	char windowsize[10];
+	string rt = comd+"_t"+ _itoa(WINDOW, windowsize,10)+ "_stay"+ _itoa(STAY, windowsize, 10);
+	auto it = args.begin();
+	while (it!= args.end())
+	{
+		switch ((*it).first[1])
+		{
+		case 't':
+			rt += "_type" + (*it).second;
+			break;
+		case 'm':
+			rt += "_m" + (*it).second;
+			break;
+		case 'R':
+			rt += "_R" + (*it).second;
+			break;
+		case 'H':
+			rt += "_H" + (*it).second;
+			break;
+		case 'U':
+			rt += "_U" + (*it).second;
+			break;
+		case 'r':
+			rt += "_r" + (*it).second;
+			break;
+		case 's':
+			rt += "_s" + (*it).second;
+			break;
+		case 'a':
+			rt += "_a" + (*it).second;
+			break;
+		default:
+			break;
+		}
+		it++;
+	}
+	auto p = rt.begin();
+	while (p!= rt.end())
+	{
+		if (*p=='.')
+		{
+			rt.erase(p);
+		}
+		else
+		{
+			p++;
+		}
+	}
+	return rt;
+}
+
 int get_command(char* _args_buffer, uint32_t _arg_buffersize, char* _comm_buffer, uint32_t _comm_buffersize, char* _comm_args_buffer, uint32_t _comm_args_buffersize)
 {
 
@@ -174,7 +229,7 @@ size_t skew_blankSize = 1000;
 string defaultOutputName = "defaultOutput.csv";
 double skew_samplingRate = 0.1;
 double skew_alpha = 0.7;
-int TYPE=0;
+int TYPE=2;
 
 bool skew_needRebuild = true;
 bool skew_w_needRebuild = true;
@@ -241,12 +296,10 @@ void drive_machine() {
 					//cout << "support:"<<(*it).second << endl;
 					if (supWet=atof((*it).second.c_str())) {
 						cout << "fpcache> support weight:" << supWet << endl;
-						break;
 					}
 					else
 					{
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
-						break;
 					}
 					//cout << "fpcache> default support:" << sup << endl;
 				}
@@ -322,14 +375,19 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
-				else if ("-o" == (*it).first) {
-					if ((*it).second != "") {
-						defaultOutputName = (*it).second + ".csv";
+				else if (("-t" == (*it).first)) {
+					if (TYPE = atoi((*it).second.c_str())) {
+						cout << "fpcache> TYPE:" << TYPE << endl;
 					}
-					cout << "fpcache> result output:" << defaultOutputName << endl;
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
 				}
 				it++;
 			}
+			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
+			cout << "fpcache> result output:" << defaultOutputName << endl;
 /******************************************************************************************************************************/
 /******************************************************************************************************************************/
 			/*
@@ -351,6 +409,28 @@ void drive_machine() {
 				T10I4D100K
 				T40I10D100K
 				retail
+				
+
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 0.7 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.2 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.7 -t 3
+
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
+
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.2 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.7 -t 3
+				
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 0.7 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.2 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.7 -t 3
+
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 0.7 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.2 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.7 -t 3
+
 			*/
 			if (needRebuild)//需重建
 			{
@@ -376,51 +456,11 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, accCache, _transactions, temptrans, samplenum/samplingRate, samplingRate,alpha,defaultOutputName);
-
-
-			//auto transIt = _transactions.begin();
-			//while (transIt != _transactions.end())
-			//{
-			//	auto itemsIt = (*transIt).begin();
-			//	while (itemsIt != (*transIt).end())
-			//	{
-			//		lruStack.access(*itemsIt);
-			//		fpCache.access(*itemsIt);
-			//		itemsIt++;
-			//	}
-			//	
-			//	if (blankSize> blankCounter){
-			//		blankCounter++;
-			//	}
-			//	else{
-			//		fpCache.appendLogTrans(*transIt);
-			//		counter++;
-			//	}
-			//	
-			//*********************************************************************/
-			//	if (counter >= fpCache.getMaxLogSize())
-			//	{
-			//		//此括号内为计算和调整fpcache 的代码块
-			//		vector<Pattern> sortedPatterns;
-			//		fpCache.runFPAnalyse(fpCache.getLog(),patterns);
-			//		fpCache.sortPatternsBySup(sortedPatterns, patterns);
-			//		fpCache.procPattern(sortedPatterns,
-			//			fpCache.getHighCorrCache().getShadowCache(),
-			//			fpCache.getLowCorrCache().getShadowCache());
-			//		fpCache.cacheOrganize();
-			//		/***********************************************************/
-			//		cout << "ACC_NUM:" << fpCache.stateACC()
-			//			<< " HIT_NUM:" << fpCache.stateHIT()
-			//			<< " PAGE_FAULT_NUM:" << fpCache.stateFault()
-			//			<< "	hit ratio:" << ((float)fpCache.stateHIT() / fpCache.stateACC()) * 100 << "%" << endl;
-			//		/**********************************************************/
-			//		counter = 0;
-			//		blankCounter = 0;
-			//	}
-			//********************************************************************/
-			//	transIt++;
-			//}
+			uniAccess(lruStack, fpCache, accCache, _transactions
+				, temptrans, samplenum/samplingRate
+				, samplingRate,alpha,defaultOutputName,
+				TYPE
+			);
 
 			cout <<"Total:\n"<< fpCache << endl;
 			printf("args:	%s\n", comm_args_buffer);
@@ -489,12 +529,6 @@ void drive_machine() {
 					}
 
 				}
-				else if ("-o" == (*it).first) {
-					if ((*it).second != ""){
-						defaultOutputName = (*it).second + ".csv";
-					}
-					cout << "skewtest> result output:" << defaultOutputName << endl;
-				}
 				else if ("-H" == (*it).first) {
 					if (stor((*it).second, skew_highSizeWeight)) {
 						cout << "skewtest> high weight:" << skew_highSizeWeight << endl;
@@ -551,6 +585,8 @@ void drive_machine() {
 				}
 				it++;
 			}
+			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
+			cout << "fpcache> result output:" << defaultOutputName << endl;
 			/*
 				skewtest -r 50 -p transactions.txt -w retail.dat -s 15 -H 3 -U 6 -m 1000 -R 0.1
 				skewtest -r 1000 -p kosarak.dat -w retail.dat -s 15 -H 5 -U 5 -m 1000 -R 0.1
@@ -569,7 +605,30 @@ void drive_machine() {
 				skewtest -p P12.lis -w retail.dat -H 3 -U 7 -m 10000 -R 0.1 -r 100000 -s 0.01 -a 1.6
 				skewtest -p kosarak.dat -w retail.dat -H 3 -U 7 -m 1000 -R 0.1 -r 1000 -s 0.008 -a 1.7 -o m1000_R01_r1000_s0008_a17
 				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 2000 -R 0.2 -r 500 -s 0.008 -a 1.7 -o type2_t64_sk_H2_U8_m2000_R02_r500_s0008_a17
-				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 400 -s 0.008 -a 1.7 -o type2_t16_sk_H2_U8_m1000_R01_r400_s0008_a17
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 400 -s 0.008 -a 1.2 -o type2_t16_sk_H2_U8_m1000_R01_r400_s0008_a17
+				
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 2000 -R 0.2 -r 500 -s 0.008 -a 1.7
+
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 0.7 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.2 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.7 -t 3
+
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
+
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.2 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.7 -t 3
+
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 0.7 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.2 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.7 -t 3
+
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 0.7 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.2 -t 3
+				skewtest -p kosarak.dat -w retail.dat -H 2 -U 8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.7 -t 3
+
 			*/
 			if (skew_needRebuild)//需重建
 			{
@@ -592,7 +651,7 @@ void drive_machine() {
 			}
 			if (skew_w_needRebuild)
 			{
-				transactions(skew_w_filepath, skew_w_transactions);
+				wtransactions(skew_w_filepath, skew_w_transactions);
 			}
 
 			LRUStack lruStack(skew_room);
@@ -640,12 +699,7 @@ void drive_machine() {
 	}
 }
 
-
-
 int main()
 {
-	//cout << (int)2.6 << " " << (int)2.3<<endl;
-
-
 	drive_machine();
 }

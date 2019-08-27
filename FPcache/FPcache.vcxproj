@@ -84,6 +84,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -128,6 +129,7 @@
   <ItemGroup>
     <ClInclude Include="ARCCache.h" />
     <ClInclude Include="cache.h" />
+    <ClInclude Include="common.h" />
     <ClInclude Include="fpcache.hpp" />
     <ClInclude Include="fpgrowth.h" />
     <ClInclude Include="fptree.hpp" />

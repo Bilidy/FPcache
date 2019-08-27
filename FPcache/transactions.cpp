@@ -171,6 +171,35 @@ void transactions(const string src_path, std::vector<Transaction> &transactions)
 	}
 	fin.close();
 }
+void wtransactions(const string src_path, std::vector<Transaction> &transactions) {
+	std::ifstream fin;
+	std::ofstream fout;
+
+	fin.open(src_path);
+
+
+	while (!fin.eof())
+	{
+		std::string str;
+		std::vector<std::string> _substr;
+		Transaction trans;
+		getline(fin, str);
+		if (str == "")
+		{
+			continue;
+		}
+		//split(str, '	', _substr);
+		split(str, ' ', trans);
+		auto it = trans.begin();
+		while(it!=trans.end())
+		{
+			(*it) = "8986" + (*it);
+			it++;
+		}
+		transactions.push_back(trans);
+	}
+	fin.close();
+}
 void transactions(const string src_path, std::vector<Transaction> &transactions,int) {
 
 	string traceName = src_path;
