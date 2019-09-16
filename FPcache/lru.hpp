@@ -1,8 +1,5 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <map>
-#include <memory>
+
 #include "common.h"
 
 struct LRUItem 
@@ -71,8 +68,10 @@ public:
 
 	size_t getCacheSize();
 	size_t getMaxSize();
+	size_t getItemNum();
 
 	iterator find(Item _item);
+	iterator find(uint64_t index);
 
 	LRUItem * begin() { return root; };
 	LRUItem * end() { return nullptr; };

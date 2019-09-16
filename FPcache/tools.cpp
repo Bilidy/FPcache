@@ -1,21 +1,9 @@
 ﻿// tools.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 //
 
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <fstream>
-#include <map>
-#include <vector>
-#include <iostream>  
-
-
 
 
 #include "transactions.h"
-#include <set>
-
 #include "util.h"
 #include"common.h"
 
@@ -145,6 +133,14 @@ string args2fn(string comd,std::set<pair<string, string>> args) {
 		case 'a':
 			rt += "_a" + (*it).second;
 			break;
+		case 'n':
+			rt += "_n" + (*it).second;
+			break;
+		case 'o':
+			rt += "_o" + (*it).second;
+			break;
+		case 'p':
+			rt += "_" + (*it).second;
 		default:
 			break;
 		}
@@ -233,6 +229,9 @@ int TYPE=2;
 
 bool skew_needRebuild = true;
 bool skew_w_needRebuild = true;
+
+float newdisWei = 0.2;
+float olddisWei = 0.8;
 
 
 size_t skew_jump_low;
@@ -445,6 +444,7 @@ void drive_machine() {
 			LRUStack lruStack(room);
 			FPCache fpCache(room,highSizeWeight,lruSizeWeight);
 			ARCCache accCache(room);
+			RR randomReplac(room);
 
 			fpCache.setMinSupport(ceil(supWet*samplenum));
 			fpCache.setMinSupportWet(supWet);
@@ -456,14 +456,15 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, accCache, _transactions
+			uniAccess(lruStack, fpCache, accCache,randomReplac, _transactions
 				, temptrans, samplenum/samplingRate
 				, samplingRate,alpha,defaultOutputName,
 				TYPE
 			);
+			printf("args:	%s\n", comm_args_buffer);
 
 			cout <<"Total:\n"<< fpCache << endl;
-			printf("args:	%s\n", comm_args_buffer);
+			cout << randomReplac << endl;
 			cout << lruStack << endl;
 			cout << "ARC:	hit ratio:"; accCache.getHitRatio(); cout << endl;
 			
@@ -583,6 +584,24 @@ void drive_machine() {
 						cout << "skewtest> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if ("-n" == (*it).first) {
+				if (newdisWei = atof((*it).second.c_str())) {
+					cout << "skewtest> new distance weight:" << newdisWei << endl;
+				}
+				else
+				{
+					cout << "skewtest> please check the parameter:" << (*it).first << endl;
+				}
+				}
+				else if ("-o" == (*it).first) {
+				if (olddisWei = atof((*it).second.c_str())) {
+					cout << "skewtest> old distance weight:" << olddisWei << endl;
+				}
+				else
+				{
+					cout << "skewtest> please check the parameter:" << (*it).first << endl;
+				}
+				}
 				it++;
 			}
 			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
@@ -657,6 +676,7 @@ void drive_machine() {
 			LRUStack lruStack(skew_room);
 			FPCache fpCache(skew_room, skew_highSizeWeight, skew_lruSizeWeight);
 			ARCCache accCache(skew_room);
+			RR randomReplac(skew_room);
 
 			fpCache.setMinSupport(skew_supWet*skew_samplenum);
 			fpCache.setMinSupportWet(skew_supWet);
@@ -667,7 +687,7 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, accCache,
+			uniAccess(lruStack, fpCache, accCache, randomReplac,
 					skew_transactions,
 					skew_w_transactions,
 					temptrans,
@@ -676,15 +696,189 @@ void drive_machine() {
 					skew_alpha,
 					skew_jump_low,
 					skew_jump_high,
+					olddisWei,
+					newdisWei,
 					defaultOutputName,
 					TYPE
 				);
 			
-
-			cout << "Total:\n" << fpCache << endl;
 			printf("args:	%s\n", comm_args_buffer);
+			cout << "Total:\n" << fpCache << endl;
 			cout << lruStack << endl;
+			cout << randomReplac << endl;
 			cout << "ARC:	hit ratio:"; accCache.getHitRatio(); cout << endl;
+
+			lruStack.flush();
+		}
+		if (0 == strcmp(comm_buffer, "pattern")) {
+
+			printf("pattern> args:%s\n", comm_args_buffer);
+			std::set<pair<string, string>> args;
+			get_args(comm_args_buffer, args);
+
+
+
+			auto it = args.begin();
+			while (it != args.end())
+			{
+				//-s 最小支持度参数，获取最小支持度。系统默认为2。
+				if ("-s" == (*it).first) {//support
+					//cout << "support:"<<(*it).second << endl;
+					if (supWet = atof((*it).second.c_str())) {
+						cout << "pattern> support weight:" << supWet << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+					//cout << "fpcache> default support:" << sup << endl;
+				}
+				//获取文件的路径filepath，文件里是transactions,若和前次文件路径相同则不做重建工作
+				else if ("-p" == (*it).first) {
+
+					if (filepath == (*it).second)
+					{
+						needRebuild = false;
+					}
+					else
+					{
+						filepath = (*it).second;
+						needRebuild = true;
+					}
+					cout << "pattern> file path:" << (*it).second << endl;
+					//transactions((*it).second,_transactions);
+				}
+				//指定缓存方式的缓存大小。
+				else if ("-r" == (*it).first) {
+
+					if (stor((*it).second, room)) {
+						cout << "pattern> room:" << room << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+
+				}
+				else if ("-n" == (*it).first) {
+					if (newdisWei = atof((*it).second.c_str())) {
+						cout << "pattern> new distance weight:" << newdisWei << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if ("-o" == (*it).first) {
+					if (olddisWei = atof((*it).second.c_str())) {
+						cout << "pattern> old distance weight:" << olddisWei << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if ("-m" == (*it).first) {
+					if (stor((*it).second, samplenum)) {
+						cout << "pattern> sample size:" << samplenum << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if (("-R" == (*it).first)) {
+					if (samplingRate = atof((*it).second.c_str())) {
+						cout << "pattern> sampling rate:" << samplingRate << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if (("-a" == (*it).first)) {
+					if (alpha = atof((*it).second.c_str())) {
+						cout << "pattern> alpha:" << alpha << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if (("-t" == (*it).first)) {
+					if (TYPE = atoi((*it).second.c_str())) {
+						cout << "pattern> TYPE:" << TYPE << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				it++;
+			}
+			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
+			cout << "pattern> result output:" << defaultOutputName << endl;
+			/******************************************************************************************************************************/
+			/******************************************************************************************************************************/
+			/*
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -R 0.1 -r 4194304 -s 0.008 -a 0.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.2 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.7 -t 3
+
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
+
+				T40I10D100K
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.2 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.7 -t 3
+
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 0.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.2 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.7 -t 3
+
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 0.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.2 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.7 -t 3
+
+			*/
+			if (needRebuild)//需重建
+			{
+				transactions(filepath, _transactions);
+				if (0 == _transactions.size())
+				{
+					cout << "pattern> transactions can't be read ,please check the file:" << filepath << endl;
+				}
+			}
+
+
+			LRUStack lruStack(room);
+			FPCache fpCache(room,0.2,0.8);
+
+			fpCache.setMinSupport(ceil(supWet*samplenum));
+			fpCache.setMinSupportWet(supWet);
+			//std::set<Pattern> patterns;
+			fpCache.setMaxLogSize(logSize);
+
+			std::vector<Transaction> temptrans;
+
+			int64_t counter = 0;
+			int64_t blankCounter = 0;
+
+			uniAccess(lruStack
+				, fpCache
+				, _transactions
+				, temptrans
+				, olddisWei
+				, newdisWei, samplenum / samplingRate
+				, samplingRate, alpha, defaultOutputName,
+				TYPE
+			);
+			printf("args:	%s\n", comm_args_buffer);
+
+			cout << "Total:\n" << endl;
+			cout << lruStack << endl;
 
 			lruStack.flush();
 		}

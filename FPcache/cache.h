@@ -43,6 +43,7 @@ public:
 	void orgnaize(std::map<Item, metadata> &metadata_hashtable);
 
 	int findItemState(Item _item);
+	uint64_t itemNumber();
 
 	void access(Entry entry);
 

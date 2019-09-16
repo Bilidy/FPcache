@@ -103,7 +103,23 @@ void fpCache::orgnaize(std::map<Item, metadata> &metadata_hashtable)
 	{
 		return;
 	}
-	auto it = ShadowCache.begin();
+	auto  it = CacheOrgNum.begin();
+	while (it != CacheOrgNum.end())
+	{
+		if (cache.find(it->first) == cache.end())
+		{
+			//因为在上一步中inseart之后cache会出现移出，CacheOrgNum数据未更新
+			CacheOrgNum[it->first] = 0;
+		}
+		else if (it->second <= 0)
+		{
+			cache.evict(it->first);
+			CacheOrgNum[it->first] = 0;
+		}
+		it->second--;
+		it++;
+	}
+	it = ShadowCache.begin();
 	while (it != ShadowCache.end())
 	{
 		//在cache中发现
@@ -121,24 +137,7 @@ void fpCache::orgnaize(std::map<Item, metadata> &metadata_hashtable)
 		CacheOrgNum[it->first] = STAY;
 		it++;
 	}
-	it = CacheOrgNum.begin();
-	while (it!= CacheOrgNum.end())
-	{
-		it->second--;
-		
-		if (cache.find(it->first)== cache.end())
-		{
-			//因为在上一步中inseart之后cache会出现移出，CacheOrgNum数据未更新
-			CacheOrgNum[it->first] = 0;
-		}
-		else if (it->second <= 0)
-		{
-			cache.evict(it->first);
-			CacheOrgNum[it->first] = 0;
-		}
 
-		it++;
-	}
 
 }
 
@@ -152,6 +151,11 @@ int fpCache::findItemState(Item _item)
 		return 1;//should and actually
 	}
 	return 0;//should not in this cache.
+}
+
+uint64_t fpCache::itemNumber()
+{
+	return cache.getItemNum();
 }
 
 void fpCache::access(Entry entry)

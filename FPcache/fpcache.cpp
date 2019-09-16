@@ -1,5 +1,5 @@
 #include "fpcache.hpp"
-#include<iostream>
+#include <iostream>
 
 FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lruScaleWeight) :
 	highCorrCache(0, true), lruCache(0), maxszie(_maxszie), highScaleWeight(_highScaleWeight),
@@ -45,8 +45,10 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 		while (its != (*it).first.end())
 		{
 			sum += metadata[(*its)].weidis;
+			//std::cout << metadata[(*its)].weidis<<",";
 			its++;
 		}
+	//	std::cout << std::endl;
 
 		double meanDis = sum / (*it).first.size();
 
@@ -71,32 +73,57 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 
 		uint64_t accnum = 0;
 		its = (*it).first.begin();
+		//std::cout << "{";
 		while (its != (*it).first.end())
 		{
 			uint64_t X = metadata[(*its)].accnum;
+			//std::cout << metadata[(*its)].accnum << ",";
 			accnum += X;
 			its++;
 		}
+		double accMean = accnum/ (*it).first.size();//计数均值
 
+		double vanAccSum = 0;//访问计数方差
+		its = (*it).first.begin();
+		while (its != (*it).first.end())
+		{
+			uint64_t X = metadata[(*its)].accnum;
+			vanAccSum += (X - accMean)*(X - accMean);
+			its++;
+		}
+		double accVariance = vanAccSum / (*it).first.size();//计数方差
+
+
+		//std::cout << "}"<<std::endl;
 		metaPattern m;
-		m.mean = meanDis;
+
+		m.Spatial_mean = meanDis;
+		m.Temporal_mean = accMean;
+		
 		m.sup = (*it).second;
-		m.var = sqrt(variance);
+
+		m.Spatial_var = sqrt(variance);
+		m.Temporal_var = sqrt(accVariance);
+
 		m.size = totalsize;
+		m.accnum = accnum;
 		m.accden = ((double)accnum) / m.size;
 		
-		if ((double)m.var / m.mean <1.0&&m.var!=0)
+		//if ((double)m.var / m.mean <1.0&&m.var!=0)
+		if (m.Spatial_var*m.Temporal_var != 0)
 		{
 			valuatedPattern valuatedpattern;//{ {(*it).first} ,m };
 			valuatedpattern.first = (*it).first;
 			//m.val = (m.mean*m.mean)/m.var;
 			//m.val = (m.sup * 10 * (m.mean / m.var)+(1.0/m.sup)*(10 * (m.mean / m.var) + m.sup )*(10 * (m.mean / m.var) + m.sup));
-			m.val = m.accden*(m.sup*(m.mean*m.mean) / m.var);
-			if (m.val>=200)
+			double cv_x = (double)m.Spatial_var / m.Spatial_mean;
+			double cv_y = (double)m.Temporal_var / m.Temporal_mean;
+			m.val = ((1.0 - cv_x) * (1.0 - cv_y)) - 0.14 * ((1.0 - cv_x) + (1.0 - cv_y)) * ((1.0 - cv_x) + (1.0 - cv_y));
+			//if (m.val>=1000)
+			if (m.val >= 0.2)
 			{
 				valuatedpattern.second = m;
 				valuated.push_back(valuatedpattern);
-
 			}
 		}
 		
@@ -114,7 +141,8 @@ void FPCache::sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::v
 	shadowCache tempScache;
 	uint64_t sizesum = 0;
 
-	while (patterns.size() && sortedPatterns .size()<=2000&& (tempScache.size() < highCorrCache.getMaxCacheSize()))
+	//while (patterns.size() && sortedPatterns .size()<=2000&& (sizesum < highCorrCache.getMaxCacheSize()))
+	while (patterns.size() && (sizesum < highCorrCache.getMaxCacheSize()))
 	{
 		
 		MaxDensity = 0.0;
@@ -161,7 +189,8 @@ void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vecto
 	shadowCache tempScache;
 	uint64_t sizesum = 0;
 
-	while (patterns.size() && sortedPatterns.size() <= 2000 && (tempScache.size() < highCorrCache.getMaxCacheSize()))
+	//while (patterns.size() && sortedPatterns.size() <= 20000 && (sizesum < highCorrCache.getMaxCacheSize()))
+	while (patterns.size() && (sizesum < highCorrCache.getMaxCacheSize()))
 	{
 
 		MaxValue = 0.0;
@@ -206,8 +235,9 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 	Pattern tempTrans;
 
 	shadowCache tempScache;
+	uint64_t sizesum = 0;
 
-	while (patterns.size() && sortedPatterns.size() <= 2000 && (tempScache.size() < highCorrCache.getMaxCacheSize()))
+	while (patterns.size() && (sizesum < highCorrCache.getMaxCacheSize()))
 	{
 		MaxSupport = 0;
 		auto tempit = patterns.end();
@@ -230,6 +260,7 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 			{
 				if (tempScache.find(*its) == tempScache.end()) {
 					tempScache.insert(std::pair<Item, uint64_t>((*its), 0));
+					sizesum += tempit->second;
 				}
 				its++;
 			}
@@ -374,6 +405,11 @@ bool FPCache::isFull()
 bool FPCache::logIsFull()
 {
 	return accLog.size() == maxLogSize;
+}
+
+uint64_t FPCache::getHighItemNum()
+{
+	return highCorrCache.itemNumber();
 }
 
 void FPCache::appendLogTrans(Transaction _trans)

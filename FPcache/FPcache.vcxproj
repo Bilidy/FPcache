@@ -119,9 +119,11 @@
   <ItemGroup>
     <ClCompile Include="ARCCache.cpp" />
     <ClCompile Include="cache.cpp" />
+    <ClCompile Include="common.cpp" />
     <ClCompile Include="fpcache.cpp" />
     <ClCompile Include="fptree.cpp" />
     <ClCompile Include="lru.cpp" />
+    <ClCompile Include="RR.cpp" />
     <ClCompile Include="tools.cpp" />
     <ClCompile Include="transactions.cpp" />
     <ClCompile Include="utility.cpp" />
@@ -134,6 +136,7 @@
     <ClInclude Include="fpgrowth.h" />
     <ClInclude Include="fptree.hpp" />
     <ClInclude Include="lru.hpp" />
+    <ClInclude Include="RR.h" />
     <ClInclude Include="transactions.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>

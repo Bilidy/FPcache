@@ -1,7 +1,7 @@
 #pragma once
 #include "lru.hpp"
 #include "fptree.hpp"
-#include"cache.h"
+#include "cache.h"
 
 using shadowCache=std::map<Item,uint16_t>;
 //using fpCache = std::map<Item, uint16_t>;
@@ -97,6 +97,7 @@ public:
 	
 	//is log full?
 	bool logIsFull();
+	uint64_t getHighItemNum();
 
 	void appendLogTrans(Transaction _trans);
 	fpCache& getHighCorrCache();

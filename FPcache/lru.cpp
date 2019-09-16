@@ -460,6 +460,11 @@ size_t LRUStack::getMaxSize()
 	return maxsize;
 }
 
+size_t LRUStack::getItemNum()
+{
+	return ptrvec.size();
+}
+
 LRUStack::iterator  LRUStack::find(Item _item) {
 	auto it = this->begin();
 	while (it != this->end()) {
@@ -471,6 +476,17 @@ LRUStack::iterator  LRUStack::find(Item _item) {
 			return it;
 		}
 		it = it->next;
+	}
+	return it;
+}
+
+LRUStack::iterator LRUStack::find(uint64_t index)
+{
+	auto it = this->begin();
+	int count = 0;
+	while ((it != this->end())&&(count!=index)) {
+		it = it->next;
+		count++;
 	}
 	return it;
 }

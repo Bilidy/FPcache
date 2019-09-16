@@ -13,10 +13,15 @@ struct metaPattern
 {
 	double val;
 	double accden;
+	uint64_t accnum;
 	uint64_t size;
-	uint16_t sup;
-	uint16_t mean;
-	uint16_t var;
+	uint64_t sup;
+
+	uint64_t Spatial_mean;
+	uint64_t Spatial_var;
+
+	uint64_t Temporal_mean;
+	uint64_t Temporal_var;
 };
 
 using Item = std::string;
