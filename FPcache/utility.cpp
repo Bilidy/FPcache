@@ -122,7 +122,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 		//我们得到了一个含有一组事务的容器slice，下面随机取出这个容器中的事务项
 		while (!slice.empty())
 		{
-			int timeslice = 5;
+			extern uint16_t TimeSlice;
+			int timeslice = TimeSlice;
 			int index = radmGen(0, slice.size() - 1, 1);//选取容器中的一个事务
 			while (timeslice-- != 0) {			//如果事务中项的数量不为空
 				if (index >= slice.size())
@@ -348,7 +349,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 		//我们得到了一个含有一组事务的容器slice，下面随机取出这个容器中的事务项
 		while (!slice.empty())
 		{
-			int timeslice = TIME_SLICE;
+			extern uint16_t TimeSlice;
+			int timeslice = TimeSlice;
 			int index = radmGen(0, slice.size() - 1, 1);//选取容器中的一个事务
 			//if (slice.at(index).size() > 0) {			//如果事务中项的数量不为空
 			while (timeslice-- != 0) {			//如果事务中项的数量不为空
@@ -574,8 +576,12 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 	int streamNO = 1;
 	ofstream oFile;
 	ofstream oFile2;
+	ofstream oFileAcc;
 	std::map<Item, metadata> hashtable;
 	int recordcounter = 0;
+
+	oFileAcc.open("patens_Acc_" + outputfile, ios::out | ios::app);
+
 	for (size_t index = 0; index < WINDOW; index++)
 	{
 		std::vector<Transaction>::iterator beginIt = temptrans.begin();
@@ -589,7 +595,8 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 		//我们得到了一个含有一组事务的容器slice，下面随机取出这个容器中的事务项
 		while (!slice.empty())
 		{
-			int timeslice = TIME_SLICE; 
+			extern uint16_t TimeSlice;
+			uint16_t timeslice = TimeSlice;//TIME_SLICE;
 			int index = radmGen(0, slice.size() - 1, 1);//选取容器中的一个事务
 			while (timeslice--!=0) {			//如果事务中项的数量不为空
 				if (index>= slice.size())
@@ -628,6 +635,8 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 				entry.size = hashtable[item].size;
 
 				lru.access(entry);
+				oFileAcc << entry.item<<endl;
+
 
 				recordcounter++;
 				if (recordcounter == RECORDE_STEP)
@@ -797,6 +806,7 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 			}
 		}
 	}
+	oFileAcc.close();
 }
 
 int sampTheNext(float a, float rate, size_t curr ,size_t M) {// M=m/r 

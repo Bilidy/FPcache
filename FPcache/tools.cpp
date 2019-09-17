@@ -139,8 +139,8 @@ string args2fn(string comd,std::set<pair<string, string>> args) {
 		case 'o':
 			rt += "_o" + (*it).second;
 			break;
-		case 'p':
-			rt += "_" + (*it).second;
+		case 'v':
+			rt += "_ts" + (*it).second;
 		default:
 			break;
 		}
@@ -253,6 +253,7 @@ size_t samplenum = 1000;
 size_t blankSize = 1000;
 double samplingRate = 0.1;
 double alpha = 0.7;
+uint16_t TimeSlice;
 
 bool needRebuild = true;
 
@@ -377,6 +378,15 @@ void drive_machine() {
 				else if (("-t" == (*it).first)) {
 					if (TYPE = atoi((*it).second.c_str())) {
 						cout << "fpcache> TYPE:" << TYPE << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if (("-v" == (*it).first)) {
+					if (TimeSlice = atoi((*it).second.c_str())) {
+						cout << "fpcache> Time Slice:" << TimeSlice << endl;
 					}
 					else
 					{
@@ -585,27 +595,36 @@ void drive_machine() {
 					}
 				}
 				else if ("-n" == (*it).first) {
-				if (newdisWei = atof((*it).second.c_str())) {
-					cout << "skewtest> new distance weight:" << newdisWei << endl;
-				}
-				else
-				{
-					cout << "skewtest> please check the parameter:" << (*it).first << endl;
-				}
+					if (newdisWei = atof((*it).second.c_str())) {
+						cout << "skewtest> new distance weight:" << newdisWei << endl;
+					}
+					else
+					{
+						cout << "skewtest> please check the parameter:" << (*it).first << endl;
+					}
 				}
 				else if ("-o" == (*it).first) {
-				if (olddisWei = atof((*it).second.c_str())) {
-					cout << "skewtest> old distance weight:" << olddisWei << endl;
+					if (olddisWei = atof((*it).second.c_str())) {
+						cout << "skewtest> old distance weight:" << olddisWei << endl;
+					}
+					else
+					{
+						cout << "skewtest> please check the parameter:" << (*it).first << endl;
+					}
 				}
-				else
-				{
-					cout << "skewtest> please check the parameter:" << (*it).first << endl;
-				}
+				else if (("-v" == (*it).first)) {
+					if (TimeSlice = atoi((*it).second.c_str())) {
+						cout << "skewtest> Time Slice:" << TimeSlice << endl;
+					}
+					else
+					{
+						cout << "skewtest> please check the parameter:" << (*it).first << endl;
+					}
 				}
 				it++;
 			}
 			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
-			cout << "fpcache> result output:" << defaultOutputName << endl;
+			cout << "skewtest> result output:" << defaultOutputName << endl;
 			/*
 				skewtest -r 50 -p transactions.txt -w retail.dat -s 15 -H 3 -U 6 -m 1000 -R 0.1
 				skewtest -r 1000 -p kosarak.dat -w retail.dat -s 15 -H 5 -U 5 -m 1000 -R 0.1
@@ -808,6 +827,15 @@ void drive_machine() {
 				else if (("-t" == (*it).first)) {
 					if (TYPE = atoi((*it).second.c_str())) {
 						cout << "pattern> TYPE:" << TYPE << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if (("-v" == (*it).first)) {
+					if (TimeSlice = atoi((*it).second.c_str())) {
+						cout << "pattern> Time Slice:" << TimeSlice << endl;
 					}
 					else
 					{

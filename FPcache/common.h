@@ -6,7 +6,7 @@
 #define STAY 110
 #define OLD 0.95
 #define NEW 0.05
-#define TIME_SLICE 3
+#define TIME_SLICE 5
 #define RECORDE_STEP 10000
 
 #include <cstdlib>
