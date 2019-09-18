@@ -116,8 +116,10 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 			valuatedpattern.first = (*it).first;
 			//m.val = (m.mean*m.mean)/m.var;
 			//m.val = (m.sup * 10 * (m.mean / m.var)+(1.0/m.sup)*(10 * (m.mean / m.var) + m.sup )*(10 * (m.mean / m.var) + m.sup));
+
 			double cv_x = (double)m.Spatial_var / m.Spatial_mean;
 			double cv_y = (double)m.Temporal_var / m.Temporal_mean;
+
 			m.val = ((1.0 - cv_x) * (1.0 - cv_y)) - 0.14 * ((1.0 - cv_x) + (1.0 - cv_y)) * ((1.0 - cv_x) + (1.0 - cv_y));
 			//if (m.val>=1000)
 			if (m.val >= 0.2)

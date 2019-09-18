@@ -17,11 +17,11 @@ struct metaPattern
 	uint64_t size;
 	uint64_t sup;
 
-	uint64_t Spatial_mean;
-	uint64_t Spatial_var;
+	double Spatial_mean;
+	double Spatial_var;
 
-	uint64_t Temporal_mean;
-	uint64_t Temporal_var;
+	double Temporal_mean;
+	double Temporal_var;
 };
 
 using Item = std::string;

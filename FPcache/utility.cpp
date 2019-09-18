@@ -82,6 +82,10 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 	size_t M,
 	float rate,
 	float a,
+
+	float olddisWei,
+	float newdisWei,
+
 	string outputfile,
 	int _type)
 {
@@ -142,9 +146,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 					m.size = ((uint64_t)abs(generateGaussianNoise(0, 35)+0.0001))*1024;
 					m.accnum = 1;
 					m.lastacc = 0;
-					m.lastdis = lru.stateACC() - m.lastacc;
+					m.lastdis = 0;//lru.stateACC() - m.lastacc;
 					m.dis = lru.stateACC() - m.lastacc;
-					m.weidis = OLD * m.lastdis + NEW * m.dis;
+					m.weidis = olddisWei * m.lastdis + newdisWei * m.dis;
 					m.lastdis = m.weidis;
 					hashtable[item] = m;
 				}
@@ -152,7 +156,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 				{
 					hashtable[item].accnum++;
 					hashtable[item].dis = lru.stateACC() - hashtable[item].lastacc;
-					hashtable[item].weidis = OLD * hashtable[item].lastdis + NEW * hashtable[item].dis;
+					hashtable[item].weidis = olddisWei * hashtable[item].lastdis + newdisWei * hashtable[item].dis;
 					hashtable[item].lastdis = hashtable[item].weidis;
 					hashtable[item].lastacc = lru.stateACC();
 				}
@@ -690,6 +694,74 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 						DWORD StartTime = ::GetTickCount();
 						fpcahe.setMinSupport(ceil(fpcahe.getMinSupportWet()*(M*rate + samplingTrans.size()) / 2));
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
+						fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
+
+						auto ite = valuatedpatterns.begin();
+						oFile.open("patens_Spatial_" + outputfile, ios::out | ios::app);
+						while (ite != valuatedpatterns.end())
+						{
+							oFile << (*ite).second.Spatial_mean << "," << ((double)(*ite).second.Spatial_var / (*ite).second.Spatial_mean) * 100 << "," << (*ite).second.sup << endl;
+							ite++;
+						}
+						oFile.close();
+
+						ite = valuatedpatterns.begin();
+						oFile.open("patens_Temporal_" + outputfile, ios::out | ios::app);
+						while (ite != valuatedpatterns.end())
+						{
+							oFile << (*ite).second.Temporal_mean << "," << ((double)(*ite).second.Temporal_var / (*ite).second.Temporal_mean) * 100 << "," << (*ite).second.sup << endl;
+							ite++;
+						}
+						oFile.close();
+
+						ite = valuatedpatterns.begin();
+						if (randmTrans.size() == 0)
+						{
+							while (ite != valuatedpatterns.end())
+							{
+								uint64_t accnum = 0;
+								Transaction randmselect;
+								for (size_t i = 0; i < (*ite).first.size(); i++)
+								{
+									int idx = radmGen(0, hashtable.size() - 1, 1);
+									auto its = hashtable.begin();
+									for (its; its != hashtable.end() && idx; its++, idx--);
+									randmselect.push_back((*its).first);
+								}
+								randmTrans.push_back(randmselect);
+								ite++;
+							}
+						}
+						if (randmTrans.size() > 0)
+						{
+							oFile.open("notpatens_Spatial_" + outputfile, ios::out | ios::app);
+							oFile2.open("notpatens_Temporal_" + outputfile, ios::out | ios::app);
+							auto ite = randmTrans.begin();
+							while (ite != randmTrans.end())
+							{
+								uint64_t accnum = 0;
+								vector<metadata> randmselect;
+								for (size_t index = 0; index < (*ite).size(); index++)
+								{
+									accnum += hashtable[(*ite).at(index)].accnum;
+									randmselect.push_back(hashtable[(*ite).at(index)]);
+								}
+								ite++;
+
+								double meanSpatial = getSpatialMean(randmselect);
+								double varSpatial = getSpatialVan(randmselect, meanSpatial);
+
+								double meanTemporal = getTemporalMean(randmselect);
+								double varTemporal = getTemporalVan(randmselect, meanTemporal);
+
+
+								oFile << (uint64_t)meanSpatial << "," << (varSpatial / meanSpatial) * 100 << "," << accnum << endl;
+								oFile2 << (uint64_t)meanTemporal << "," << (varTemporal / meanTemporal) * 100 << "," << accnum << endl;
+
+							}
+							oFile.close();
+							oFile2.close();
+						}
 						
 						switch (_type)
 						{
@@ -697,99 +769,16 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						case 2:
-							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
 							fpcahe.sortPatternsByDensity(sortedPatterns, valuatedpatterns);
 							break;
 						case 3:
-						{
-							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
-							auto ite = valuatedpatterns.begin();
-							oFile.open("patens_Spatial_" + outputfile, ios::out | ios::app);
-							while (ite != valuatedpatterns.end())
-							{
-								oFile << (*ite).second.Spatial_mean << "," << ((double)(*ite).second.Spatial_var/ (*ite).second.Spatial_mean)*100 << "," << (*ite).second.sup << endl;
-								ite++;
-							}
-							oFile.close();
-
-							ite = valuatedpatterns.begin();
-							oFile.open("patens_Temporal_" + outputfile, ios::out | ios::app);
-							while (ite != valuatedpatterns.end())
-							{
-								oFile << (*ite).second.Temporal_mean << "," << ((double)(*ite).second.Temporal_var / (*ite).second.Temporal_mean) * 100 << "," << (*ite).second.sup << endl;
-								ite++;
-							}
-							oFile.close();
-
-							//ite = valuatedpatterns.begin();
-							//oFile.open("watch_" + outputfile, ios::out | ios::app);
-							//oFile << (*ite).second.Spatial_mean << "," << ((double)(*ite).second.Spatial_var / (*ite).second.Spatial_mean) * 100 << "," << (*ite++).second.accnum << endl;
-							//oFile << (*ite).second.Spatial_mean << "," << ((double)(*ite).second.Spatial_var / (*ite).second.Spatial_mean) * 100 << "," << (*ite).second.accnum << endl;
-							//oFile.close();
-
-							ite = valuatedpatterns.begin();
-							if (randmTrans.size()==0)
-							{
-								while (ite != valuatedpatterns.end())
-								{
-									uint64_t accnum = 0;
-									Transaction randmselect;
-									for (size_t i = 0; i < (*ite).first.size(); i++)
-									{
-										int idx = radmGen(0, hashtable.size() - 1, 1);
-										auto its = hashtable.begin();
-										for (its; its != hashtable.end() && idx; its++, idx--);
-										randmselect.push_back((*its).first);
-									}
-									randmTrans.push_back(randmselect);
-									ite++;
-								}
-							}
-
-
-							
-							if(randmTrans.size()>0)
-							{
-								oFile.open("notpatens_Spatial_" + outputfile, ios::out | ios::app);
-								oFile2.open("notpatens_Temporal_" + outputfile, ios::out | ios::app);
-								auto ite = randmTrans.begin();
-								while (ite != randmTrans.end())
-								{
-									uint64_t accnum = 0;
-									vector<metadata> randmselect;
-									for (size_t index = 0; index < (*ite).size(); index++)
-									{
-										accnum += hashtable[(*ite).at(index)].accnum;
-										randmselect.push_back(hashtable[(*ite).at(index)]);
-									}
-									ite++;
-
-									double meanSpatial = getSpatialMean(randmselect);
-									double varSpatial = getSpatialVan(randmselect, meanSpatial);
-
-									double meanTemporal = getTemporalMean(randmselect);
-									double varTemporal = getTemporalVan(randmselect, meanTemporal);
-
-									
-									oFile << (uint64_t)meanSpatial << "," << (varSpatial / meanSpatial) * 100 << "," << accnum << endl;
-									oFile2 << (uint64_t)meanTemporal << "," << (varTemporal / meanTemporal) * 100 << "," << accnum << endl;
-									
-								}
-								oFile.close();
-								oFile2.close();
-							}
 							fpcahe.sortPatternsByVal(sortedPatterns, valuatedpatterns);
-
 							break; 
-						}
 						default:
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						}
-						//recordPatternsItem(sortedPatterns, outputfile);
-						//fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache());
-						//fpcahe.cacheOrganize(hashtable);
-						//resetMetaAccnum(hashtable);
+
 						DWORD EndTime = ::GetTickCount();
 						cout << streamNO << ":" << recordcounter << "	*ºÄÊ±" << EndTime - StartTime << "ms" << "	number of filted Patterns " << sortedPatterns.size() << endl;
 						/***********************************************************/

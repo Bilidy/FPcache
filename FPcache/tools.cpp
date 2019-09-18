@@ -384,6 +384,24 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if ("-n" == (*it).first) {
+					if (newdisWei = atof((*it).second.c_str())) {
+						cout << "fpcache> new distance weight:" << newdisWei << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if ("-o" == (*it).first) {
+					if (olddisWei = atof((*it).second.c_str())) {
+						cout << "fpcache> old distance weight:" << olddisWei << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
 				else if (("-v" == (*it).first)) {
 					if (TimeSlice = atoi((*it).second.c_str())) {
 						cout << "fpcache> Time Slice:" << TimeSlice << endl;
@@ -468,7 +486,10 @@ void drive_machine() {
 
 			uniAccess(lruStack, fpCache, accCache,randomReplac, _transactions
 				, temptrans, samplenum/samplingRate
-				, samplingRate,alpha,defaultOutputName,
+				, samplingRate,alpha
+				, olddisWei
+				, newdisWei
+				, defaultOutputName,
 				TYPE
 			);
 			printf("args:	%s\n", comm_args_buffer);

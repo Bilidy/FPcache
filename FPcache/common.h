@@ -33,10 +33,10 @@ struct metadata
 {
 	uint64_t size;
 	uint64_t accnum;
-	uint64_t weidis;
-	uint64_t lastacc;
-	uint64_t lastdis;
-	uint64_t dis;
+	double weidis;
+	double lastacc;
+	double lastdis;
+	double dis;
 };
 int radmGen(size_t low, size_t high, int);
 double radmGen(size_t low, size_t high, double);

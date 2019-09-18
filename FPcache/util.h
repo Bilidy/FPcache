@@ -16,6 +16,10 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 	size_t M,
 	float rate,
 	float a,
+
+	float olddisWei,
+	float newdisWei,
+
 	string outputfile,
 	int _type);
 
@@ -28,8 +32,10 @@ void uniAccess(LRUStack& lru,FPCache&fpcahe, ARCCache&accache, RR&random,
 	float a	,
 	size_t skew_jump_low,
 	size_t skew_jump_high,
+
 	float olddisWei,
 	float newdisWei,
+
 	string output,
 	int _type);
 void uniAccess(LRUStack& lru,
