@@ -46,7 +46,7 @@ double getTemporalVan(std::vector<metadata>& randmselect, double mean)
 	double sum = 0;
 	for (auto i = randmselect.begin(); i != randmselect.end(); i++)
 	{
-		sum += (i->accnum - mean)*(i->accnum - mean);
+		sum += ((double)(i->accnum) - mean)*((double)(i->accnum) - mean);
 	}
 	return sqrt(sum / randmselect.size());
 }

@@ -36,18 +36,23 @@ struct lastState
 	uint64_t lastStateHit = 0;
 	uint64_t lastStateMis = 0;
 };
-void resetMetaAccnum(std::map<Item, metadata> &hashtable) {
+void resetMetaAccnum(std::map<Item, metadata> &hashtable, float olddisWei,	float newdisWei) {
 	auto it = hashtable.begin();
 	while (it!= hashtable.end())
 	{
-		it->second.accnum = 0;
+		it->second.accnum = 1;
+		/*************/
+		it->second.lastdis = 1;//lru.stateACC() - m.lastacc;
+		it->second.dis = 0;// lru.stateACC() - m.lastacc;
+		it->second.weidis = olddisWei * it->second.lastdis + newdisWei * it->second.dis;
+		/*************/
 		it++;
 	}
 }
 void recordPatternsItem(std::vector<Pattern>&sortedPatterns,string outputfile) {
 	auto PatternIt = sortedPatterns.begin();
 	ofstream oFile;
-	oFile.open("patten_" + outputfile, ios::out | ios::app);
+	oFile.open("pat_" + outputfile, ios::out | ios::app);
 	std::map<Item,int> items;
 	while (PatternIt != sortedPatterns.end())
 	{
@@ -103,6 +108,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 	std::vector<Pattern> sortedPatterns;
 	std::vector<valuatedPattern> valuatedpatterns;
 
+	ofstream oFileHit;
+	ofstream oFileMiss;
+
 	lastState FPClast;
 	lastState LRUlast;
 	lastState ARClast;
@@ -113,6 +121,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 	ofstream oFile;
 	std::map<Item, metadata> hashtable;
 	int recordcounter = 0;
+
+	oFileHit.open("fpc_Hit_" + outputfile, ios::out | ios::app);
+	oFileMiss.open("fpc_Mis_" + outputfile, ios::out | ios::app);
 	for (size_t index = 0; index < WINDOW; index++)
 	{
 		std::vector<Transaction>::iterator beginIt = temptrans.begin();
@@ -143,17 +154,18 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 				{
 					metadata m;
 					//srand(atoi(item.c_str()));
-					m.size = ((uint64_t)abs(generateGaussianNoise(0, 35)+0.0001))*1024;
+					m.size = ((uint64_t)abs(generateGaussianNoise(0, 35))+1)*1024;
 					m.accnum = 1;
-					m.lastacc = 0;
-					m.lastdis = 0;//lru.stateACC() - m.lastacc;
-					m.dis = lru.stateACC() - m.lastacc;
+					m.lastacc = lru.stateACC();
+					m.lastdis = 1;//lru.stateACC() - m.lastacc;
+					m.dis = 0;// lru.stateACC() - m.lastacc;
 					m.weidis = olddisWei * m.lastdis + newdisWei * m.dis;
-					m.lastdis = m.weidis;
 					hashtable[item] = m;
 				}
 				else
 				{
+					/*newdisWei = 1.0 / hashtable[item].lastdis;
+					olddisWei = 1.0 - newdisWei;*/
 					hashtable[item].accnum++;
 					hashtable[item].dis = lru.stateACC() - hashtable[item].lastacc;
 					hashtable[item].weidis = olddisWei * hashtable[item].lastdis + newdisWei * hashtable[item].dis;
@@ -166,9 +178,13 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 				entry.size = hashtable[item].size;
 
 				lru.access(entry);
-				fpcahe.access(entry);//模拟访问
-				//45:19028 fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.2 -t 2
-				//17800-17900
+				if (fpcahe.access(entry)) {
+					oFileHit << fpcahe.stateACC() << "," << entry.item << endl;
+					
+				}
+				else{
+					oFileMiss<< fpcahe.stateACC() << "," << entry.item << endl;
+				}//模拟访问
 				accache.ARCreference(entry);
 				random.access(entry);
 				//accache.ARCreference(stoi(slice.at(index).at(itmIndex)));
@@ -249,7 +265,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 							break;
 						case 2:
 							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
-							fpcahe.sortPatternsByDensity(sortedPatterns, valuatedpatterns);
+							fpcahe.sortPatternsByDensity(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						case 3:
 							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
@@ -260,9 +276,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 							break;
 						}
 						//recordPatternsItem(sortedPatterns, outputfile);
-						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache());
+						fpcahe.procPattern(sortedPatterns, hashtable, fpcahe.getHighCorrCache().getShadowCache());
 						fpcahe.cacheOrganize(hashtable);
-						resetMetaAccnum(hashtable);
+						resetMetaAccnum(hashtable,olddisWei,newdisWei);
 						DWORD EndTime = ::GetTickCount();
 						cout << streamNO << ":" << recordcounter << "	*耗时" << EndTime - StartTime << "ms" << "	number of filted Patterns " << sortedPatterns.size() << endl;
 						/***********************************************************/
@@ -296,6 +312,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 			}
 		}
 	}
+	oFileHit.close();
+	oFileMiss.close();
 }
 
 void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
@@ -374,21 +392,20 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 					if ((skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter)) {
 						m.size = ((uint64_t)abs(generateGaussianNoise(8, 40)+0.001)) * 1024;
 					}
-					else
-					{
-						m.size = ((uint64_t)abs(generateGaussianNoise(0, 35) + 0.001)) * 1024;
+					else{
+						m.size = ((uint64_t)abs(generateGaussianNoise(0, 35)+1)) * 1024;
 					}
-					
 					m.accnum = 1;
 					m.lastacc = 0;
 					m.lastdis = lru.stateACC() - m.lastacc;
 					m.dis = lru.stateACC() - m.lastacc;
-					m.weidis = olddisWei * m.lastdis + newdisWei * m.dis;
+					m.weidis =1+ olddisWei * m.lastdis + newdisWei * m.dis;
 					m.lastdis = m.weidis;
 					hashtable[item] = m;
 				}
-				else
-				{
+				else{
+					//newdisWei = 1.0 / hashtable[item].lastdis;
+					//olddisWei = 1.0 - newdisWei;
 					hashtable[item].accnum++;
 					hashtable[item].dis = lru.stateACC() - hashtable[item].lastacc;
 					hashtable[item].weidis = olddisWei * hashtable[item].lastdis + newdisWei *hashtable[item].dis;
@@ -400,9 +417,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 				entry.item = item;
 				entry.size = hashtable[item].size;
 
-				if ((skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter))
-				{
-					
+				if ((skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter)){
 					lru.access(entry);//模拟访问
 					fpcahe.access(entry);//模拟访问
 					accache.ARCreference(entry);
@@ -417,8 +432,6 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 					random.access(entry);
 				}
 
-				
-
 				recordcounter++;
 				if (recordcounter== RECORDE_STEP)
 				{
@@ -431,6 +444,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 						<< ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 - ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 
 						<< endl;
 					oFile.close();
+
 					FPClast.lastStateAcc = fpcahe.stateACC();
 					FPClast.lastStateHit = fpcahe.stateHIT();
 					FPClast.lastStateMis = fpcahe.stateFault();
@@ -443,6 +457,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 					ARClast.lastStateAcc = accache.getAcc();
 					ARClast.lastStateHit = accache.getHit();
 					ARClast.lastStateMis = accache.getMis();
+
 					recordcounter = 0;
 				}
 
@@ -459,7 +474,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 					{
 						cout << streamNO << ":" << recordcounter << "##### workload changed ####"<<endl;
 					}
+
 					thenext--;
+
 					if (thenext == 0) {//该采样了
 						samplingTrans.push_back(Transaction(tempslice.at(index)));
 						thenext = sampTheNext(a, rate, sampCounter, M);
@@ -468,9 +485,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 					if (thenext == 0) {
 						thenext = 1;
 					}
+
 					//保持一致性
 					slice.erase(slice.begin() + index);
-					//slice.shrink_to_fit();
 					tempslice.erase(tempslice.begin() + index);
 					//添加一个事务进入slice
 					if (wtemptrans.size() > 0 && (skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter)) {
@@ -509,7 +526,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 							break;
 						case 2://type2使用访问密度作为调入指标
 							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
-							fpcahe.sortPatternsByDensity(sortedPatterns, valuatedpatterns);
+							fpcahe.sortPatternsByDensity(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						case 3://type3使用value作为调入指标
 							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
@@ -519,7 +536,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						}
-						fpcahe.procPattern(sortedPatterns, fpcahe.getHighCorrCache().getShadowCache());
+						fpcahe.procPattern(sortedPatterns, hashtable, fpcahe.getHighCorrCache().getShadowCache());
 						fpcahe.cacheOrganize(hashtable);
 						DWORD EndTime = ::GetTickCount();
 						cout <<streamNO <<":"<<recordcounter<< "	*耗时" << EndTime - StartTime << "ms" <<"	number of filted Patterns "<< sortedPatterns.size() << endl;
@@ -564,6 +581,8 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 	std::vector<Transaction> slice;
 	std::vector<Transaction> tempslice;
 	std::vector<Transaction> randmTrans;
+	valuatedPattern spyTran;
+	Transaction spyNotTran;
 	int finishedCounter = 0;
 	int totalsize = transactions.size();
 	int sliceCounter = 0;
@@ -578,14 +597,16 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 
 
 	int streamNO = 1;
+	int frameNum = 1;
 	ofstream oFile;
 	ofstream oFile2;
-	ofstream oFileAcc;
+	ofstream oFileHit;
+	ofstream oFileMiss;
 	std::map<Item, metadata> hashtable;
 	int recordcounter = 0;
 
-	oFileAcc.open("patens_Acc_" + outputfile, ios::out | ios::app);
-
+	oFileHit.open("patens_Hit_" + outputfile, ios::out | ios::app);
+	oFileMiss.open("patens_Mis_" + outputfile, ios::out | ios::app);
 	for (size_t index = 0; index < WINDOW; index++)
 	{
 		std::vector<Transaction>::iterator beginIt = temptrans.begin();
@@ -607,7 +628,6 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 				{
 					break;
 				}
-				//int itmIndex = radmGen(0, slice.at(index).size() - 1, 1);//选取事务中的一个项
 
 				Item item= (*slice.at(index).begin());
 				slice.at(index).erase(slice.at(index).begin());
@@ -619,14 +639,16 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 					m.size = ((uint64_t)abs(generateGaussianNoise(0, 35) + 0.0001)) * 1024;
 					m.accnum = 1;
 					m.lastacc = 0;
-					m.lastdis = lru.stateACC() - m.lastacc;
-					m.dis = lru.stateACC() - m.lastacc;
-					m.weidis = olddis * m.lastdis + newdis * m.dis;
+					m.lastdis = 1;//lru.stateACC() - m.lastacc;
+					m.dis = 0;//lru.stateACC() - m.lastacc;
+					m.weidis = 1 + olddis * m.lastdis + newdis * m.dis;
 					m.lastdis = m.weidis;
 					hashtable[item] = m;
 				}
 				else
 				{
+					/*newdis = 1.0 / hashtable[item].lastdis;
+					olddis = 1.0 - newdis;*/
 					hashtable[item].accnum++;
 					hashtable[item].dis = lru.stateACC() - hashtable[item].lastacc;
 					hashtable[item].weidis = olddis * hashtable[item].lastdis + newdis * hashtable[item].dis;
@@ -638,8 +660,13 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 				entry.item = item;
 				entry.size = hashtable[item].size;
 
-				lru.access(entry);
-				oFileAcc << entry.item<<endl;
+
+				if (lru.access(entry)) {
+					oFileHit << lru.stateACC() <<","<<entry.item << endl;
+				}
+				else{
+					oFileMiss << lru.stateACC() << "," << entry.item << endl;
+				}
 
 
 				recordcounter++;
@@ -655,10 +682,6 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 					LRUlast.lastStateMis = lru.stateFault();
 					recordcounter = 0;
 				}
-
-
-				//slice.at(index).erase(slice.at(index).begin() + itmIndex);//将此项从该事务中删除
-				//slice.at(index).shrink_to_fit();
 
 				if (slice.at(index).empty())
 				{
@@ -696,24 +719,93 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
 						fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
 
+						if (spyTran.first.size() == 0)
+						{
+							int idx = radmGen(0, valuatedpatterns.size() - 1, 1);
+							auto its = valuatedpatterns.begin();
+							spyTran=(*(its+idx));
+						}
+						else 
+						{
+							oFile.open("spy_Spatial_" + outputfile, ios::out | ios::app);
+							oFile2.open("spy_Temporal_" + outputfile, ios::out | ios::app);
+							auto beg = spyTran.first.begin();
+							vector<metadata> randmselect;
+							for (beg; beg!= spyTran.first.end(); beg++)
+							{
+								randmselect.push_back(hashtable[(*beg)]);
+							}
+
+							double meanSpatial = getSpatialMean(randmselect);
+							double varSpatial = getSpatialVan(randmselect, meanSpatial);
+
+							double meanTemporal = getTemporalMean(randmselect);
+							double varTemporal = getTemporalVan(randmselect, meanTemporal);
+							oFile << (uint64_t)meanSpatial << "," << (varSpatial / meanSpatial) * 100 << endl;
+							oFile2 << (uint64_t)meanTemporal << "," << (varTemporal / meanTemporal) * 100 << endl;
+							oFile.close();
+							oFile2.close();
+						}
+						if (spyNotTran.size() == 0)
+						{
+							for (size_t i = 0; i < spyTran.first.size(); i++)
+							{
+								int idx = radmGen(0, hashtable.size() - 1, 1);
+								auto its = hashtable.begin();
+								for (size_t j = 0; j < idx; j++)
+								{
+									its++;
+								}
+								spyNotTran.push_back((*its).first);
+							}
+						}
+						else
+						{
+							oFile.open("spyNot_Spatial_" + outputfile, ios::out | ios::app);
+							oFile2.open("spyNot_Temporal_" + outputfile, ios::out | ios::app);
+							auto beg = spyNotTran.begin();
+							vector<metadata> randmselect;
+							for (beg; beg != spyNotTran.end(); beg++)
+							{
+								randmselect.push_back(hashtable[(*beg)]);
+							}
+
+							double meanSpatial = getSpatialMean(randmselect);
+							double varSpatial = getSpatialVan(randmselect, meanSpatial);
+
+							double meanTemporal = getTemporalMean(randmselect);
+							double varTemporal = getTemporalVan(randmselect, meanTemporal);
+							oFile << (uint64_t)meanSpatial << "," << (varSpatial / meanSpatial) * 100 << endl;
+							oFile2 << (uint64_t)meanTemporal << "," << (varTemporal / meanTemporal) * 100 << endl;
+							oFile.close();
+							oFile2.close();
+						}
+
 						auto ite = valuatedpatterns.begin();
-						oFile.open("patens_Spatial_" + outputfile, ios::out | ios::app);
+						oFile.open("patens_Spatial_"+ outputfile, ios::out | ios::app);
+						oFile2.open("frame"+ std::to_string(frameNum) +"_x", ios::out | ios::app);
 						while (ite != valuatedpatterns.end())
 						{
-							oFile << (*ite).second.Spatial_mean << "," << ((double)(*ite).second.Spatial_var / (*ite).second.Spatial_mean) * 100 << "," << (*ite).second.sup << endl;
+							oFile << (*ite).second.Spatial_mean << "," << ((double)(*ite).second.Spatial_var / (*ite).second.Spatial_mean) * 100 << "," << (*ite).second.sup <<","<<(*ite).second.val<< endl;
+							oFile2 << ((double)(*ite).second.Spatial_var / (*ite).second.Spatial_mean) * 100 << endl;
 							ite++;
 						}
+						oFile2.close();
 						oFile.close();
 
 						ite = valuatedpatterns.begin();
-						oFile.open("patens_Temporal_" + outputfile, ios::out | ios::app);
+						oFile.open("patens_Temporal_"  + outputfile, ios::out | ios::app);
+						oFile2.open("frame" + std::to_string(frameNum) + "_y", ios::out | ios::app);
 						while (ite != valuatedpatterns.end())
 						{
-							oFile << (*ite).second.Temporal_mean << "," << ((double)(*ite).second.Temporal_var / (*ite).second.Temporal_mean) * 100 << "," << (*ite).second.sup << endl;
+							oFile << (*ite).second.Temporal_mean << "," << ((double)(*ite).second.Temporal_var / (*ite).second.Temporal_mean) * 100 << "," << (*ite).second.accnum << endl;
+							oFile2 << ((double)(*ite).second.Temporal_var / (*ite).second.Temporal_mean) * 100 << endl;
 							ite++;
 						}
+						oFile2.close();
 						oFile.close();
-
+						frameNum++;
+						/********************************************************************/
 						ite = valuatedpatterns.begin();
 						if (randmTrans.size() == 0)
 						{
@@ -762,14 +854,14 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 							oFile.close();
 							oFile2.close();
 						}
-						
+						/**********************************************************************************/
 						switch (_type)
 						{
 						case 1:
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						case 2:
-							fpcahe.sortPatternsByDensity(sortedPatterns, valuatedpatterns);
+							fpcahe.sortPatternsByDensity(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						case 3:
 							fpcahe.sortPatternsByVal(sortedPatterns, valuatedpatterns);
@@ -778,7 +870,7 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						}
-
+						resetMetaAccnum(hashtable, olddis, newdis);
 						DWORD EndTime = ::GetTickCount();
 						cout << streamNO << ":" << recordcounter << "	*耗时" << EndTime - StartTime << "ms" << "	number of filted Patterns " << sortedPatterns.size() << endl;
 						/***********************************************************/
@@ -795,10 +887,11 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 			}
 		}
 	}
-	oFileAcc.close();
+	oFileHit.close();
+	oFileMiss.close();
 }
 
-int sampTheNext(float a, float rate, size_t curr ,size_t M) {// M=m/r 
+int sampTheNext(float a, float rate, size_t curr ,size_t M) {
 	size_t samplenum = M * rate;
 	double xstep = 1.0 / samplenum;
 	double xcurrmap = (double)curr / samplenum;
@@ -821,16 +914,8 @@ void skewWorkLoad(std::vector<Transaction>& skew_transactions,size_t skew_low, s
 		Transaction::iterator it = skew_transactions[i].begin();
 		while (it!= skew_transactions[i].end())
 		{
-			/*
-			char buffer[10]{0};
-			itoa(atoi((*it).c_str())+20000, buffer,10);
-			(*it) = buffer;
-			*/
-			(*it) = "10000" + (*it);
+			(*it) = "99999" + (*it);
 			it++;
 		}
-		
 	}
-	
-
 }

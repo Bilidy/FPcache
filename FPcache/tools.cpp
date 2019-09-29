@@ -115,6 +115,9 @@ string args2fn(string comd,std::set<pair<string, string>> args) {
 		case 'm':
 			rt += "_m" + (*it).second;
 			break;
+		case 'p':
+			rt += "_"+(*it).second;
+			break;
 		case 'R':
 			rt += "_R" + (*it).second;
 			break;
@@ -141,6 +144,8 @@ string args2fn(string comd,std::set<pair<string, string>> args) {
 			break;
 		case 'v':
 			rt += "_ts" + (*it).second;
+		case 'T':
+			rt += "_Trh" + (*it).second;
 		default:
 			break;
 		}
@@ -254,6 +259,7 @@ size_t blankSize = 1000;
 double samplingRate = 0.1;
 double alpha = 0.7;
 uint16_t TimeSlice;
+double Threshold = 0;
 
 bool needRebuild = true;
 
@@ -411,6 +417,15 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if (("-T" == (*it).first)) {
+					if (Threshold = atof((*it).second.c_str())) {
+						cout << "fpcache> Threshold:" << Threshold << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
 				it++;
 			}
 			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
@@ -443,7 +458,7 @@ void drive_machine() {
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.7 -t 3
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
-				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 3
+				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 5 -o 0.99 -n 0.01 -T 0.1
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
@@ -863,6 +878,15 @@ void drive_machine() {
 						cout << "pattern> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if (("-T" == (*it).first)) {
+					if (Threshold = atof((*it).second.c_str())) {
+						cout << "pattern> Threshold:" << Threshold << endl;
+					}
+					else
+					{
+						cout << "pattern> please check the parameter:" << (*it).first << endl;
+					}
+				}
 				it++;
 			}
 			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
@@ -870,26 +894,26 @@ void drive_machine() {
 			/******************************************************************************************************************************/
 			/******************************************************************************************************************************/
 			/*
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -R 0.1 -r 4194304 -s 0.008 -a 0.7 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.2 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 4194304 -s 0.008 -a 0.7 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 4194304 -s 0.008 -a 1.2 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 4194304 -s 0.008 -a 1.7 -t 3 -v 5
 
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 8388608 -s 0.008 -a 0.7 -t 3  -v 5
+				pattern -p kosarak.dat -n 0.01 -o 0.99 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 5 -T 0.1 -m 1000 -R 0.1
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 8388608 -s 0.008 -a 1.7 -t 3 -v 5
 
 				T40I10D100K
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.2 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 1.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 16777216 -s 0.008 -a 0.7 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 16777216 -s 0.008 -a 1.2 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 16777216 -s 0.008 -a 1.7 -t 3 -v 5
 
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 0.7 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.2 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 33554432 -s 0.008 -a 1.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 33554432 -s 0.008 -a 0.7 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 33554432 -s 0.008 -a 1.2 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 33554432 -s 0.008 -a 1.7 -t 3 -v 5
 
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 0.7 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.2 -t 3
-				pattern -p kosarak.dat -n 0.2 -o 0.8 -m 1000 -R 0.1 -r 67108864 -s 0.008 -a 1.7 -t 3
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 67108864 -s 0.008 -a 0.7 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 67108864 -s 0.008 -a 1.2 -t 3 -v 5
+				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 67108864 -s 0.008 -a 1.7 -t 3 -v 5
 
 			*/
 			if (needRebuild)//需重建
@@ -924,6 +948,7 @@ void drive_machine() {
 				, samplingRate, alpha, defaultOutputName,
 				TYPE
 			);
+			
 			printf("args:	%s\n", comm_args_buffer);
 
 			cout << "Total:\n" << endl;

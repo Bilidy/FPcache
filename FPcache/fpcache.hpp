@@ -53,13 +53,13 @@ public:
 	void valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated);
 	
 	void sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns);
-	void sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns);
+	void sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::map<Item, metadata> &metadata_hashtable, std::vector<valuatedPattern>& patterns);
 	void sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns);
 	//void sortPatternsBySup(std::vector<Pattern>& sortedPatterns,std::set<Pattern>& patterns);
 
 	//input:fp pattern 
 	//output:high cache,low cache
-	bool procPattern(std::vector<Pattern>& patterns, 
+	bool procPattern(std::vector<Pattern>& patterns, std::map<Item, metadata> &metadata_hashtable,
 		shadowCache& _shadowHigh);
 
 	//get the item lists that should be cached or evicted
@@ -89,7 +89,7 @@ public:
 	bool resizeLRU();
 	
 	//access the Item
-	void access(Entry entry);
+	bool access(Entry entry);
 
 	//is cache empty/full?
 	bool isEmpty();

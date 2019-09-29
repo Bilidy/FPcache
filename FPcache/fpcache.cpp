@@ -40,6 +40,7 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 	std::set<Pattern>::iterator it = patterns.begin();
 	while (it != patterns.end())
 	{
+		if ((*it).first.size() < 2) { it++; continue; }
 		double sum = 0;//均值
 		std::set<Item>::iterator its = (*it).first.begin();
 		while (its != (*it).first.end())
@@ -60,7 +61,7 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 			vansum += (X- meanDis)*(X - meanDis);
 			its++;
 		}
-		double variance= vansum / (*it).first.size();
+		double variance = vansum / ((*it).first.size());
 
 		uint64_t totalsize = 0;
 		its = (*it).first.begin();
@@ -91,7 +92,7 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 			vanAccSum += (X - accMean)*(X - accMean);
 			its++;
 		}
-		double accVariance = vanAccSum / (*it).first.size();//计数方差
+		double accVariance = vanAccSum / ((*it).first.size());//计数方差
 
 
 		//std::cout << "}"<<std::endl;
@@ -110,7 +111,7 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 		m.accden = ((double)accnum) / m.size;
 		
 		//if ((double)m.var / m.mean <1.0&&m.var!=0)
-		if (m.Spatial_var*m.Temporal_var != 0)
+		if (m.Spatial_mean*m.Temporal_mean != 0)
 		{
 			valuatedPattern valuatedpattern;//{ {(*it).first} ,m };
 			valuatedpattern.first = (*it).first;
@@ -120,9 +121,10 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 			double cv_x = (double)m.Spatial_var / m.Spatial_mean;
 			double cv_y = (double)m.Temporal_var / m.Temporal_mean;
 
-			m.val = ((1.0 - cv_x) * (1.0 - cv_y)) - 0.14 * ((1.0 - cv_x) + (1.0 - cv_y)) * ((1.0 - cv_x) + (1.0 - cv_y));
-			//if (m.val>=1000)
-			if (m.val >= 0.2)
+			m.val = (((cv_x) * (cv_y)) - 0.1 * (( cv_x) + (cv_y)) * ((cv_x) + (cv_y)));
+			//m.val = (((cv_x) * (1.0 - cv_y)) - 0.15 * ((cv_x) + (cv_y)) * ((cv_x) + (cv_y)));
+			extern double Threshold;
+			if (m.val < Threshold)
 			{
 				valuatedpattern.second = m;
 				valuated.push_back(valuatedpattern);
@@ -134,7 +136,7 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 
 }
 //sort Patterns By Support form big to little
-void FPCache::sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns)
+void FPCache::sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::map<Item, metadata> &metadata_hashtable, std::vector<valuatedPattern>& patterns)
 {
 	sortedPatterns.clear();
 	double MaxDensity;
@@ -169,7 +171,7 @@ void FPCache::sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::v
 			{
 				if (tempScache.find(*its) == tempScache.end()) {
 					tempScache.insert(std::pair<Item,uint64_t>((*its), 0));
-					sizesum += tempit->second.size;
+					sizesum += metadata_hashtable[*its].size;
 				}
 				its++;
 			}
@@ -276,16 +278,20 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 	}
 }
 //规则内部的各项重用距离和min重用距离之差之和，访问频率和文件大小
-bool FPCache::procPattern(std::vector<Pattern>& patterns, shadowCache& _shadowHigh)
+bool FPCache::procPattern(std::vector<Pattern>& patterns, std::map<Item, metadata> &metadata_hashtable, shadowCache& _shadowHigh)
 {
 	_shadowHigh.clear();
+	int sum = 0;
 	auto it = patterns.begin();
-	while (it != patterns.end() && _shadowHigh.size() < highCorrCache.getMaxCacheSize())
+	while (it != patterns.end() && sum < highCorrCache.getMaxCacheSize())
 	{
 		auto its = (*it).first.begin();
 		while (its != (*it).first.end())
 		{
-			_shadowHigh[*its] = 0;
+			if (_shadowHigh.find(*its) == _shadowHigh.end()) {
+				_shadowHigh[*its] = 0;
+				sum += metadata_hashtable[*its].size;
+			}
 			its++;
 		}
 		it++;
@@ -375,7 +381,7 @@ bool FPCache::resizeLRU()
 	return true;
 }
 
-void FPCache::access(Entry entry)
+bool FPCache::access(Entry entry)
 {
 	ACC_NUM++;
 	int stats=highCorrCache.findItemState(entry.item);
@@ -384,12 +390,12 @@ void FPCache::access(Entry entry)
 	case 1:
 		highCorrCache.access(entry);
 		HIT_NUM++;
-		return;
+		return true;
 	default:
 		// something wrong, maybe a bug.
 		break;
 	}
-	lruCache.access(entry);
+	return lruCache.access(entry);
 }
 
 bool FPCache::isEmpty()

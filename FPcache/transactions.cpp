@@ -153,8 +153,9 @@ void transactions(const string src_path, std::vector<Transaction> &transactions)
 	std::ofstream fout;
 
 	fin.open(src_path);
+	//int max = 200000;
 	
-	
+	//while (!fin.eof()&&max--)
 	while (!fin.eof())
 	{
 		std::string str;

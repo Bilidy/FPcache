@@ -322,7 +322,7 @@ bool LRUStack::access(Entry entry)
 		}
 		else {
 			pageFault(entry);
-			return true;
+			return false;
 		}
 	}
 	else
