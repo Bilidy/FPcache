@@ -107,6 +107,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 	std::set<Pattern> patterns;
 	std::vector<Pattern> sortedPatterns;
 	std::vector<valuatedPattern> valuatedpatterns;
+	std::vector<valuatedPattern> valuatedpatterns2;
 
 	ofstream oFileHit;
 	ofstream oFileMiss;
@@ -264,11 +265,11 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						case 2:
-							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
+							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
 							fpcahe.sortPatternsByDensity(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						case 3:
-							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
+							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
 							fpcahe.sortPatternsByVal(sortedPatterns, valuatedpatterns);
 							break;
 						default:
@@ -276,7 +277,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 							break;
 						}
 						//recordPatternsItem(sortedPatterns, outputfile);
-						fpcahe.procPattern(sortedPatterns, hashtable, fpcahe.getHighCorrCache().getShadowCache());
+						fpcahe.procPattern(sortedPatterns, valuatedpatterns2, hashtable, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
 						fpcahe.cacheOrganize(hashtable);
 						resetMetaAccnum(hashtable,olddisWei,newdisWei);
 						DWORD EndTime = ::GetTickCount();
@@ -344,6 +345,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 	int thenext = 1;
 	std::set<Pattern> patterns;
 	std::vector<valuatedPattern> valuatedpatterns;
+	std::vector<valuatedPattern> valuatedpatterns2;
 	std::vector<Pattern> sortedPatterns;
 
 	lastState FPClast;
@@ -525,18 +527,18 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						case 2://type2使用访问密度作为调入指标
-							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
+							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
 							fpcahe.sortPatternsByDensity(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						case 3://type3使用value作为调入指标
-							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
+							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
 							fpcahe.sortPatternsByVal(sortedPatterns, valuatedpatterns);
 							break;
 						default:
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						}
-						fpcahe.procPattern(sortedPatterns, hashtable, fpcahe.getHighCorrCache().getShadowCache());
+						fpcahe.procPattern(sortedPatterns, valuatedpatterns2, hashtable, fpcahe.getHighCorrCache().getShadowCache(),fpcahe.getLowCorrCache().getShadowCache());
 						fpcahe.cacheOrganize(hashtable);
 						DWORD EndTime = ::GetTickCount();
 						cout <<streamNO <<":"<<recordcounter<< "	*耗时" << EndTime - StartTime << "ms" <<"	number of filted Patterns "<< sortedPatterns.size() << endl;
@@ -591,6 +593,7 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 	std::set<Pattern> patterns;
 	std::vector<Pattern> sortedPatterns;
 	std::vector<valuatedPattern> valuatedpatterns;
+	std::vector<valuatedPattern> valuatedpatterns2;
 
 	lastState FPClast;
 	lastState LRUlast;
@@ -717,7 +720,7 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 						DWORD StartTime = ::GetTickCount();
 						fpcahe.setMinSupport(ceil(fpcahe.getMinSupportWet()*(M*rate + samplingTrans.size()) / 2));
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
-						fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
+						fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
 
 						if (spyTran.first.size() == 0)
 						{

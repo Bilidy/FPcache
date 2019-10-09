@@ -45,6 +45,9 @@
     <ClCompile Include="common.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="lowCache.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fpcache.hpp">
@@ -75,6 +78,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="RR.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="lowCache.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

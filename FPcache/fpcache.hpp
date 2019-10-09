@@ -2,6 +2,7 @@
 #include "lru.hpp"
 #include "fptree.hpp"
 #include "cache.h"
+#include "lowCache.h"
 
 using shadowCache=std::map<Item,uint16_t>;
 //using fpCache = std::map<Item, uint16_t>;
@@ -19,7 +20,7 @@ private:
 	uint64_t PAGE_FAULT_NUM;
 
 	fpCache highCorrCache;
-	//fpCache lowCorrCache;
+	lowCache lowCorrCache;
 	LRUStack lruCache;
 
 	
@@ -29,9 +30,11 @@ private:
 	uint64_t maxLogSize;
 
 	float highScaleWeight;//高关联度缓存占比
+	float lowScaleWeight;
 	float lruScaleWeight;// 无关联 LRU
 	
 	uint64_t highCorrCacheMaxSize;
+	uint64_t lowCorrCacheMaxSize;
 	uint64_t lruCacheMaxSize;
 
 	uint64_t minimum_support_threshold;
@@ -43,14 +46,15 @@ private:
 			<< "	hit ratio:" << ((float)fpc.stateHIT() / fpc.stateACC()) * 100 << "%";
 		return os;
 	}
+	int findItemState(Item item);
 
 public:
-	FPCache(size_t maxszie, float _highScaleWeight, float _lruScaleWeight);
+	FPCache(size_t maxszie, float _highScaleWeight, float _lowScaleWeight, float _lruScaleWeight);
 
 	//run FP-Growth analyse
 	bool runFPAnalyse(std::vector<Transaction> _accLog, std::set<Pattern>& patterns);
 
-	void valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated);
+	void valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated, std::vector<valuatedPattern>& valuated2);
 	
 	void sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns);
 	void sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::map<Item, metadata> &metadata_hashtable, std::vector<valuatedPattern>& patterns);
@@ -59,8 +63,8 @@ public:
 
 	//input:fp pattern 
 	//output:high cache,low cache
-	bool procPattern(std::vector<Pattern>& patterns, std::map<Item, metadata> &metadata_hashtable,
-		shadowCache& _shadowHigh);
+	bool procPattern(std::vector<Pattern>& patterns, std::vector<valuatedPattern>& patterns2, std::map<Item, metadata> &metadata_hashtable,
+		shadowCache& _shadowHigh, shadowCache& _shadowLow);
 
 	//get the item lists that should be cached or evicted
 	bool getCacheDelta(
@@ -101,6 +105,7 @@ public:
 
 	void appendLogTrans(Transaction _trans);
 	fpCache& getHighCorrCache();
+	fpCache& getLowCorrCache();
 
 	std::vector<Transaction> &getLog() {
 		return accLog;

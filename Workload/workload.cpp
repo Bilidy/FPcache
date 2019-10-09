@@ -49,6 +49,7 @@ double generateGaussianNoise(double mu, double sigma)
 	z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
 	return z0 * sigma + mu;
 }
+
 void main()
 {
 	std::ofstream out;

@@ -1,20 +1,34 @@
 #include "fpcache.hpp"
 #include <iostream>
 
-FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lruScaleWeight) :
-	highCorrCache(0, true), lruCache(0), maxszie(_maxszie), highScaleWeight(_highScaleWeight),
-	lruScaleWeight(_lruScaleWeight), highCorrCacheMaxSize(0),
-	lruCacheMaxSize(0), minimum_support_threshold(0), maxLogSize(0), min_sup_wet(0.02)
+int FPCache::findItemState(Item item)
 {
-	float sum=_highScaleWeight + _lruScaleWeight;
+	if(highCorrCache.isItemInCache(item))
+		return 1;
+	if (lowCorrCache.isItemInCache(item))
+		return 2;
+	else
+		return 3;
+}
+
+FPCache::FPCache(size_t _maxszie, float _highScaleWeight, float _lowScaleWeight, float _lruScaleWeight) :
+	highCorrCache(0, true), lowCorrCache(0,true), lruCache(0), maxszie(_maxszie), highScaleWeight(_highScaleWeight), 
+	lowScaleWeight(_lowScaleWeight),lruScaleWeight(_lruScaleWeight), 
+	highCorrCacheMaxSize(0),lowCorrCacheMaxSize(0),lruCacheMaxSize(0),
+	minimum_support_threshold(0), maxLogSize(0), min_sup_wet(0.02)
+{
+	float sum=_highScaleWeight+_lowScaleWeight + _lruScaleWeight;
 	size_t highCacheSize = 0;
+	size_t lowCacheSize = 0;
 	size_t lruCacheSize = 0;
 	if (sum) {
 		highCacheSize = _maxszie * (_highScaleWeight) / sum;
+		lowCacheSize = _maxszie * (_lowScaleWeight) / sum;
 		lruCacheSize = _maxszie * (_lruScaleWeight) / sum;
 	}
 
 	highCorrCache.setMaxCacheSize(highCacheSize);
+	lowCorrCache.setMaxCacheSize(lowCacheSize);
 	lruCache.setMaxSize(_maxszie);
 
 	ACC_NUM = 0;
@@ -34,7 +48,7 @@ bool FPCache::runFPAnalyse(std::vector<Transaction> _accLog,std::set<Pattern>& p
 	else
 		return false;
 }
-void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated)
+void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metadata>&metadata, std::vector<valuatedPattern>&valuated,std::vector<valuatedPattern>& valuated2)
 {
 	valuated.clear();
 	std::set<Pattern>::iterator it = patterns.begin();
@@ -111,7 +125,7 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 		m.accden = ((double)accnum) / m.size;
 		
 		//if ((double)m.var / m.mean <1.0&&m.var!=0)
-		if (m.Spatial_mean*m.Temporal_mean != 0)
+		if (m.Spatial_mean*m.Temporal_mean != 0&& (double)m.Spatial_var / m.Spatial_mean <1.0 && (double)m.Temporal_var / m.Temporal_mean <1.0)
 		{
 			valuatedPattern valuatedpattern;//{ {(*it).first} ,m };
 			valuatedpattern.first = (*it).first;
@@ -121,13 +135,18 @@ void FPCache::valuatePatterns(std::set<Pattern>& patterns, std::map<Item, metada
 			double cv_x = (double)m.Spatial_var / m.Spatial_mean;
 			double cv_y = (double)m.Temporal_var / m.Temporal_mean;
 
-			m.val = (((cv_x) * (cv_y)) - 0.1 * (( cv_x) + (cv_y)) * ((cv_x) + (cv_y)));
+			m.val = (((cv_x) * (cv_y)) - 0.15 * (( cv_x) + (cv_y)) * ((cv_x) + (cv_y)));
 			//m.val = (((cv_x) * (1.0 - cv_y)) - 0.15 * ((cv_x) + (cv_y)) * ((cv_x) + (cv_y)));
 			extern double Threshold;
-			if (m.val < Threshold)
+			extern double ProtectThreshold;
+			if (m.val < (Threshold) && m.val>0)
 			{
 				valuatedpattern.second = m;
 				valuated.push_back(valuatedpattern);
+			}
+			else if (m.val < ProtectThreshold && m.val>0) {
+				valuatedpattern.second = m;
+				valuated2.push_back(valuatedpattern);
 			}
 		}
 		
@@ -278,7 +297,7 @@ void FPCache::sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<P
 	}
 }
 //规则内部的各项重用距离和min重用距离之差之和，访问频率和文件大小
-bool FPCache::procPattern(std::vector<Pattern>& patterns, std::map<Item, metadata> &metadata_hashtable, shadowCache& _shadowHigh)
+bool FPCache::procPattern(std::vector<Pattern>& patterns, std::vector<valuatedPattern> & patterns2, std::map<Item, metadata> &metadata_hashtable, shadowCache& _shadowHigh, shadowCache& _shadowLow)
 {
 	_shadowHigh.clear();
 	int sum = 0;
@@ -295,6 +314,21 @@ bool FPCache::procPattern(std::vector<Pattern>& patterns, std::map<Item, metadat
 			its++;
 		}
 		it++;
+	}
+	sum = 0;
+	auto itt = patterns2.begin();
+	while (itt != patterns2.end() && sum < lowCorrCache.getMaxCacheSize())
+	{
+		auto its = (*itt).first.begin();
+		while (its != (*itt).first.end())
+		{
+			if (_shadowLow.find(*its) == _shadowLow.end()) {
+				_shadowLow[*its] = 0;
+				sum += metadata_hashtable[*its].size;
+			}
+			its++;
+		}
+		itt++;
 	}
 	return true;
 }
@@ -364,7 +398,7 @@ bool FPCache::resizeHighCorrCache()
 
 bool FPCache::resizeLRU()
 {
-	size_t lrusize = maxszie - highCorrCache.getCacheSize();
+	size_t lrusize = maxszie - highCorrCache.getCacheSize()- lowCorrCache.getCacheSize();
 	if (lrusize<lruCache.getCacheSize())
 	{
 		while (lrusize < lruCache.getCacheSize()) {
@@ -387,26 +421,44 @@ bool FPCache::access(Entry entry)
 	int stats=highCorrCache.findItemState(entry.item);
 	switch (stats)
 	{
-	case 1:
+	case 1://should in the cache and in the cache actually
 		highCorrCache.access(entry);
 		HIT_NUM++;
 		return true;
 	default:
-		// something wrong, maybe a bug.
 		break;
 	}
+	stats = lowCorrCache.findItemState(entry.item);
+	switch (stats)
+	{
+	case 1://should in the cache and in the cache actually
+		lowCorrCache.access(entry);
+		HIT_NUM++;
+		return true;
+	case 2://could in the cache but not
+		lowCorrCache.access(entry);
+
+		if (lruCache.find(entry.item) != lruCache.end()) {
+			lruCache.evict(entry.item);
+		}
+		PAGE_FAULT_NUM++;
+		return true;
+	default:
+		break;
+	}
+	resizeLRU();
 	return lruCache.access(entry);
 }
 
 bool FPCache::isEmpty()
 {
-	return 0 == highCorrCache.getCacheSize() +
+	return 0 == highCorrCache.getCacheSize() + lowCorrCache.getCacheSize()+
 		lruCache.getCacheSize();
 }
 
 bool FPCache::isFull()
 {
-	return highCorrCache.getCacheSize() + 
+	return highCorrCache.getCacheSize() + lowCorrCache.getCacheSize() + 
 		lruCache.getCacheSize() == maxszie;
 }
 
@@ -429,17 +481,35 @@ fpCache & FPCache::getHighCorrCache()
 {
 	return highCorrCache;
 }
+fpCache& FPCache::getLowCorrCache()
+{
+	// TODO: 在此处插入 return 语句
+	return lowCorrCache;
+}
 void FPCache::cacheOrganize(std::map<Item, metadata> &metadata_hashtable)
 {
-	highCorrCache.orgnaize(metadata_hashtable);
-	LRUStack::iterator it = highCorrCache.getCache().begin();
-	while (it != highCorrCache.getCache().end())
+	lowCorrCache.orgnaize();
+	LRUStack::iterator it = lowCorrCache.getCache().begin();
+	while (it != lowCorrCache.getCache().end())
 	{
 		if (lruCache.find((*it).item) != lruCache.end()) {
 			lruCache.evict((*it).item);
 		}
 		it++;
 	}
+	highCorrCache.orgnaize(metadata_hashtable);
+	it = highCorrCache.getCache().begin();
+	while (it != highCorrCache.getCache().end())
+	{
+		if (lowCorrCache.isItemInCache((*it).item)) {
+			lowCorrCache.evictCacheItem((*it).item);
+		}
+		if (lruCache.find((*it).item) != lruCache.end()) {
+			lruCache.evict((*it).item);
+		}
+		it++;
+	}
+	
 	resizeLRU();
 }
 uint64_t FPCache::stateACC()

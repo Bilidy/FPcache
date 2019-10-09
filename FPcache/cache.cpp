@@ -42,16 +42,28 @@ uint64_t fpCache::getMaxSize()
 }
 //_item ÊÇ·ñÔÚ
 bool fpCache::isItemInCache(Item _item) {
-	auto cit = cache.begin();
-	while (cit!= cache.end())
+	if (cache.getCacheSize()==0)
 	{
-		if (_item==(*cit).item)
-		{
-			return true;
-		}
-		cit++;
+		return false;
 	}
-	return false;
+	if (cache.find(_item)!= cache.end())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+	//auto cit = cache.begin();
+	//while (cit!= cache.end())
+	//{
+	//	if (_item==(*cit).item)
+	//	{
+	//		return true;
+	//	}
+	//	cit++;
+	//}
+	//return false;
 }
 
 bool fpCache::setCacheItem(Entry entry)
@@ -77,17 +89,16 @@ bool fpCache::setCacheItem(Entry entry)
 bool fpCache::evictCacheItem(Item _item)
 {
 	if (cache.getCacheSize() > 0){
-		auto it = cache.begin(); 
-		while (it != cache.end()){
-			if ((*it).item == _item){
-				cache.evict(it->item);
-				//size--;
-			}
+
+		if (cache.find(_item)!= cache.end())
+		{
+			cache.evict(_item);
+			return true;
 		}
-		if (cache.end()==it){
+		else
+		{
 			return false;
 		}
-		return true;
 	}
 	return false;
 }

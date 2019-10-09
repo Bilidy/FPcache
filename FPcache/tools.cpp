@@ -222,7 +222,8 @@ std::vector<Transaction> skew_w_transactions;
 std::vector<Transaction> skew_temptransactions;
 
 size_t skew_room;
-size_t skew_highSizeWeight = 0.3;
+size_t skew_highSizeWeight = 0.2;
+size_t skew_lowSizeWeight = 0.1;
 size_t skew_lruSizeWeight = 0.7;
 size_t skew_logSize = 1000;
 size_t skew_samplenum = 1000;
@@ -251,7 +252,8 @@ std::vector<Transaction> _transactions;
 std::vector<Transaction> _temptransactions;
 
 size_t room;
-size_t highSizeWeight = 0.3;
+size_t highSizeWeight = 0.2;
+size_t lowSizeWeight = 0.1;
 size_t lruSizeWeight = 0.7;
 size_t logSize = 1000;
 size_t samplenum = 1000;
@@ -260,6 +262,7 @@ double samplingRate = 0.1;
 double alpha = 0.7;
 uint16_t TimeSlice;
 double Threshold = 0;
+double ProtectThreshold = 0.1;
 
 bool needRebuild = true;
 
@@ -339,6 +342,15 @@ void drive_machine() {
 				else if ("-H" == (*it).first) {
 					if (stor((*it).second, highSizeWeight)) {
 						cout << "fpcache> high weight:" << highSizeWeight << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if ("-L" == (*it).first) {
+					if (stor((*it).second, lowSizeWeight)) {
+						cout << "fpcache> low weight:" << lowSizeWeight << endl;
 					}
 					else
 					{
@@ -426,6 +438,15 @@ void drive_machine() {
 						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
+				else if (("-P" == (*it).first)) {
+					if (ProtectThreshold = atof((*it).second.c_str())) {
+						cout << "fpcache> Protect Threshold:" << ProtectThreshold << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
+					}
+				}
 				it++;
 			}
 			defaultOutputName = args2fn(comm_buffer, args) + ".csv";
@@ -458,7 +479,7 @@ void drive_machine() {
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.7 -t 3
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
-				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 5 -o 0.99 -n 0.01 -T 0.1
+				fpcache -p kosarak.dat -H 4 -2 1 -U 4 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.1
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
@@ -485,7 +506,7 @@ void drive_machine() {
 
 
 			LRUStack lruStack(room);
-			FPCache fpCache(room,highSizeWeight,lruSizeWeight);
+			FPCache fpCache(room,highSizeWeight, lowSizeWeight,lruSizeWeight);
 			ARCCache accCache(room);
 			RR randomReplac(room);
 
@@ -583,6 +604,15 @@ void drive_machine() {
 					else
 					{
 						cout << "skewtest> please check the parameter:" << (*it).first << endl;
+					}
+				}
+				else if ("-L" == (*it).first) {
+					if (stor((*it).second, lowSizeWeight)) {
+						cout << "fpcache> low weight:" << lowSizeWeight << endl;
+					}
+					else
+					{
+						cout << "fpcache> please check the parameter:" << (*it).first << endl;
 					}
 				}
 				else if ("-U" == (*it).first) {
@@ -729,7 +759,7 @@ void drive_machine() {
 			}
 
 			LRUStack lruStack(skew_room);
-			FPCache fpCache(skew_room, skew_highSizeWeight, skew_lruSizeWeight);
+			FPCache fpCache(skew_room, skew_highSizeWeight, skew_lowSizeWeight, skew_lruSizeWeight);
 			ARCCache accCache(skew_room);
 			RR randomReplac(skew_room);
 
@@ -927,7 +957,7 @@ void drive_machine() {
 
 
 			LRUStack lruStack(room);
-			FPCache fpCache(room,0.2,0.8);
+			FPCache fpCache(room,0.2,0.1,0.7);
 
 			fpCache.setMinSupport(ceil(supWet*samplenum));
 			fpCache.setMinSupportWet(supWet);
