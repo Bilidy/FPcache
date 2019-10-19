@@ -479,7 +479,8 @@ void drive_machine() {
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 4194304 -s 0.008 -a 1.7 -t 3
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
-				fpcache -p kosarak.dat -H 4 -2 1 -U 4 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.1
+				fpcache -p kosarak.dat -H 4 -L 2 -U 4 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.1
+				fpcache -p kosarak.dat -H 4 -L 2 -U 4 -m 1000 -R 0.1 -r 8388608 -s 0.007 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
