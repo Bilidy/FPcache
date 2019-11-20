@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include "common.h"
+#include "arc.h"
 
 using namespace std;
 
@@ -11,31 +12,25 @@ class ARCCache
 {
 public:
 	ARCCache(int size);
-	void ARCreference(Entry entry);
+	bool access(Entry entry);
 	void getHitRatio();
 	uint64_t getHit();
 	uint64_t getAcc();
 	uint64_t getMis();
-	void REPLACE(Entry entry);
+	void timeINC(uint64_t t);
+	void seqnumINC();
+	uint64_t getAvgtime();
+	void restAvgtime();
+
+
 
 private:
-	int p = 0;
-
-	unordered_map<int, list<int>::iterator> B1map;
-	list<int> B1queue;
-
-	unordered_map<int, list<int>::iterator> B2map;
-	list<int> B2queue;
-
-	unordered_map<int, list<int>::iterator> T1map;
-	list<int> T1queue;
-
-	unordered_map<int, list<int>::iterator> T2map;
-	list<int> T2queue;
-
-	int currentSize = 0; // |T1| + |T2|. Manually updated whenever something is added to cache. Ensure it does not exceed maxSize.
-	int maxSize; // This is the first command line parameter
-	double cacheHit; // This will be incremented whenever we reference something that is available in cache
-	double cacheRequest; // This will be incremented whenever anything is referenced
+	ARC list_;
+	int cacheHit=0; 
+	int cacheRequest=0; 
+	int cacheMiss = 0;
+	uint64_t time = 0;
+	uint64_t seqnum = 0;
+	uint64_t avgtime = 0;
 };
 

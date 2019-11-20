@@ -437,6 +437,29 @@ uint64_t LRUStack::stateFault()
 	return PAGE_FAULT_NUM;
 }
 
+void LRUStack::restAvgtime()
+{
+	time = 0;
+	seqnum = 0;
+	avgtime = 0;
+}
+
+void LRUStack::timeINC(uint64_t t)
+{
+	time += t;
+}
+
+void LRUStack::seqnumINC()
+{
+	seqnum++;
+}
+
+uint64_t LRUStack::getAvgtime()
+{
+
+	return time / seqnum;
+}
+
 void LRUStack::flush()
 {
 	LRUItem* pPtr = root;

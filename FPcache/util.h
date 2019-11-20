@@ -3,14 +3,19 @@
 #define NODE_NUM_MAX 5
 
 #include "lru.hpp"
+
 #include "fpcache.hpp"
 #include "RR.h"
 #include "ARCCache.h"
+#include "LIRSCache.h"
+#include "MQCache.h"
+#include "LRUKCache.h"
+#include "LFUCache.h"
 
 
 double generateGaussianNoise(double mu, double sigma);
 int sampTheNext(float a, float rate, size_t curr, size_t M);
-void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
+void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random, LIRSCache& lirsCache, MQCache&mqCache, LRUKCache& lruk, LFUCache &fluCache,
 	std::vector<Transaction>&transactions,
 	std::vector<Transaction>&temptrans,
 	size_t M,

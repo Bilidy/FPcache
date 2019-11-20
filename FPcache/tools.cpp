@@ -5,7 +5,7 @@
 
 #include "transactions.h"
 #include "util.h"
-#include"common.h"
+#include "common.h"
 
 using Item = std::string;
 using Transaction = std::vector<Item>;
@@ -480,7 +480,31 @@ void drive_machine() {
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 0.7 -t 3
 				fpcache -p kosarak.dat -H 4 -L 2 -U 4 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.1
-				fpcache -p kosarak.dat -H 4 -L 2 -U 4 -m 1000 -R 0.1 -r 8388608 -s 0.007 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 5 -L 2 -U 3 -m 1000 -R 0.1 -r 8388608 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 5 -L 2 -U 3 -m 1000 -R 0.1 -r 275 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 5 -L 3 -U 2 -m 1000 -R 0.1 -r 275 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
+
+				fpcache -p kosarak.dat -H 7 -L 2 -U 1 -m 1000 -R 0.1 -r 64 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 6 -L 3 -U 1 -m 1000 -R 0.1 -r 128 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 5 -L 4 -U 1 -m 1000 -R 0.1 -r 256 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 4 -L 5 -U 1 -m 1000 -R 0.1 -r 512 -s 0.005 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.25
+				fpcache -p kosarak.dat -H 3 -L 7 -U 1 -m 1000 -R 0.1 -r 1024 -s 0.005 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.25
+				workload_webdev
+				fpcache -p kosarak.dat -H 7 -L 3 -U 1 -m 1000 -R 0.1 -r 64 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.8 -n 0.2 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 6 -L 3 -U 1 -m 1000 -R 0.1 -r 128 -s 0.006 -a 1.2 -t 2 -v 1 -o 0.8 -n 0.2 -T 0.05 -P 0.2
+				fpcache -p kosarak.dat -H 5 -L 4 -U 1 -m 1000 -R 0.1 -r 256 -s 0.005 -a 1.2 -t 2 -v 1 -o 0.8 -n 0.2 -T 0.05 -P 0.25
+				fpcache -p kosarak.dat -H 4 -L 5 -U 1 -m 1000 -R 0.1 -r 512 -s 0.005 -a 1.2 -t 2 -v 1 -o 0.8 -n 0.2 -T 0.05 -P 0.3
+				fpcache -p kosarak.dat -H 3 -L 7 -U 1 -m 1000 -R 0.1 -r 1024 -s 0.005 -a 1.2 -t 2 -v 1 -o 0.8 -n 0.2 -T 0.05 -P 0.3
+				fpcache -p kosarak.dat -H 3 -L 7 -U 1 -m 1000 -R 0.1 -r 2048 -s 0.005 -a 1.2 -t 2 -v 1 -o 0.8 -n 0.2 -T 0.1 -P 0.4
+
+				fpcache -p Dataset1.dat -H 9 -L 0 -U 1 -m 1000 -R 0.1 -r 64 -s 0.004 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.25
+				fpcache -p Dataset2.dat -H 9 -L 0 -U 1 -m 1000 -R 0.1 -r 64 -s 0.004 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.25
+				fpcache -p Dataset3.dat -H 9 -L 0 -U 1 -m 1000 -R 0.1 -r 64 -s 0.004 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.25
+				fpcache -p Dataset1.dat -H 9 -L 0 -U 1 -m 1000 -R 0.1 -r 128 -s 0.004 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.25
+				fpcache -p Dataset1.dat -H 8 -L 1 -U 1 -m 1000 -R 0.1 -r 218 -s 0.004 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.05 -P 0.25
+				fpcache -p Dataset1.dat -H 5 -L 4 -U 1 -m 1000 -R 0.1 -r 512 -s 0.004 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.06 -P 0.28
+				fpcache -p Dataset1.dat -H 3 -L 6 -U 1 -m 1000 -R 0.1 -r 1024 -s 0.004 -a 1.2 -t 2 -v 1 -o 0.99 -n 0.01 -T 0.07 -P 0.3
+
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 8388608 -s 0.008 -a 1.7 -t 3
 
 				fpcache -p kosarak.dat -H 2 -U 8 -m 1000 -R 0.1 -r 16777216 -s 0.008 -a 0.7 -t 3
@@ -509,7 +533,11 @@ void drive_machine() {
 			LRUStack lruStack(room);
 			FPCache fpCache(room,highSizeWeight, lowSizeWeight,lruSizeWeight);
 			ARCCache accCache(room);
+			LIRSCache lirsCache(room);
+			MQCache mqCache(room);
 			RR randomReplac(room);
+			LFUCache lfuCache(room);
+			LRUKCache lrukCache(room,3);
 
 			fpCache.setMinSupport(ceil(supWet*samplenum));
 			fpCache.setMinSupportWet(supWet);
@@ -521,7 +549,7 @@ void drive_machine() {
 			int64_t counter = 0;
 			int64_t blankCounter = 0;
 
-			uniAccess(lruStack, fpCache, accCache,randomReplac, _transactions
+			uniAccess(lruStack, fpCache, accCache,randomReplac, lirsCache, mqCache, lrukCache, lfuCache, _transactions
 				, temptrans, samplenum/samplingRate
 				, samplingRate,alpha
 				, olddisWei
@@ -930,7 +958,7 @@ void drive_machine() {
 				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 4194304 -s 0.008 -a 1.7 -t 3 -v 5
 
 				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 8388608 -s 0.008 -a 0.7 -t 3  -v 5
-				pattern -p kosarak.dat -n 0.01 -o 0.99 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 5 -T 0.1 -m 1000 -R 0.1
+				pattern -p kosarak.dat -n 0.01 -o 0.99 -r 8388608 -s 0.008 -a 1.2 -t 2 -v 1 -T 0.1 -m 1000 -R 0.1 -T 0.05 -P 0.1
 				pattern -p kosarak.dat -n 0.2 -o 0.8 -r 8388608 -s 0.008 -a 1.7 -t 3 -v 5
 
 				T40I10D100K

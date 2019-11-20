@@ -1,6 +1,7 @@
 
 #include "util.h"
 #include "common.h"
+#include <sstream>
 
 
 using std::cout;
@@ -81,7 +82,7 @@ void recordPatternsItem(std::vector<Pattern>&sortedPatterns,string outputfile) {
 	oFile << endl;
 	oFile.close();
 }
-void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
+void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,LIRSCache&lirsCache, MQCache& mqCache, LRUKCache&lrukCache, LFUCache&lfuCache,
 	std::vector<Transaction>&transactions,
 	std::vector<Transaction>&temptrans,
 	size_t M,
@@ -99,6 +100,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 	std::vector<Transaction> samplingTrans;
 	std::vector<Transaction> slice;
 	std::vector<Transaction> tempslice;
+	std::vector<vector<uint64_t>> timeArray(C_NUM);
+
 	int finishedCounter = 0;
 	int totalsize = transactions.size();
 	int sliceCounter = 0;
@@ -109,27 +112,40 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 	std::vector<valuatedPattern> valuatedpatterns;
 	std::vector<valuatedPattern> valuatedpatterns2;
 
-	ofstream oFileHit;
-	ofstream oFileMiss;
+	//ofstream oFileFPCHit;
+	//ofstream oFileFPCMiss;
+
+	ofstream oFileInfo;
+	//ofstream oFileLRUKMiss;
 
 	lastState FPClast;
 	lastState LRUlast;
 	lastState ARClast;
 	lastState RRlast;
+	lastState LIRSlast;
+	lastState LRUKlast;
+	lastState LFUlast;
 
-
+	uint32_t time = 1;
 	int streamNO = 1;
 	ofstream oFile;
 	std::map<Item, metadata> hashtable;
 	int recordcounter = 0;
 
-	oFileHit.open("fpc_Hit_" + outputfile, ios::out | ios::app);
-	oFileMiss.open("fpc_Mis_" + outputfile, ios::out | ios::app);
+	//oFileFPCHit.open("fpc_Hit_" + outputfile, ios::out | ios::app);
+	//oFileFPCMiss.open("fpc_Mis_" + outputfile, ios::out | ios::app);
+	
+	//oFileLRUKMiss.open("LRUK_Mis_" + outputfile, ios::out | ios::app);
 	for (size_t index = 0; index < WINDOW; index++)
 	{
 		std::vector<Transaction>::iterator beginIt = temptrans.begin();
-		int idx = radmGen(0, temptrans.size() - 1, 1);
+		//int idx = radmGen(0, temptrans.size() - 1, 1);
+		int idx = 0;
 		slice.push_back(temptrans.at(idx));
+		for (size_t i = 0; i < C_NUM; i++)
+		{
+			timeArray.at(i).push_back(0);
+		}
 		std::vector<Transaction>::iterator it = beginIt + idx;
 		temptrans.erase(it);
 	}
@@ -140,7 +156,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 		{
 			extern uint16_t TimeSlice;
 			int timeslice = TimeSlice;
-			int index = radmGen(0, slice.size() - 1, 1);//选取容器中的一个事务
+			//int index = radmGen(0, slice.size() - 1, 1);//选取容器中的一个事务
+			int index = 0;
 			while (timeslice-- != 0) {			//如果事务中项的数量不为空
 				if (index >= slice.size())
 				{
@@ -155,7 +172,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 				{
 					metadata m;
 					//srand(atoi(item.c_str()));
-					m.size = ((uint64_t)abs(generateGaussianNoise(0, 35))+1)*1024;
+					//m.size = ((uint64_t)abs(generateGaussianNoise(0, 35))+1)*1024;
+					m.size = 1;
 					m.accnum = 1;
 					m.lastacc = lru.stateACC();
 					m.lastdis = 1;//lru.stateACC() - m.lastacc;
@@ -177,19 +195,73 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 				Entry entry;
 				entry.item = item;
 				entry.size = hashtable[item].size;
-
-				lru.access(entry);
+				/*****************************************************************/
+				
+				if (lru.access(entry)) {
+					timeArray.at(LRU_POS).at(index) += MEM_ACC_TIME;
+					//oFileFPCHit << fpcahe.stateACC() << "," << entry.item << endl;
+				}
+				else {
+					timeArray.at(LRU_POS).at(index) += DIK_ACC_TIME;
+					//oFileFPCMiss << fpcahe.stateACC() << "," << entry.item << endl;
+				}//模拟访问
+				/*****************************************************************/
 				if (fpcahe.access(entry)) {
-					oFileHit << fpcahe.stateACC() << "," << entry.item << endl;
-					
+					timeArray.at(FPC_POS).at(index) += MEM_ACC_TIME;
+					//oFileFPCHit << fpcahe.stateACC() << "," << entry.item << endl;
 				}
 				else{
-					oFileMiss<< fpcahe.stateACC() << "," << entry.item << endl;
+					timeArray.at(FPC_POS).at(index) += DIK_ACC_TIME;
+					//oFileFPCMiss<< fpcahe.stateACC() << "," << entry.item << endl;
 				}//模拟访问
-				accache.ARCreference(entry);
-				random.access(entry);
-				//accache.ARCreference(stoi(slice.at(index).at(itmIndex)));
+				/*****************************************************************/
+				if (accache.access(entry)) {
+					timeArray.at(ARC_POS).at(index) += MEM_ACC_TIME;
+					//oFileFPCHit << accache.getAcc() << "," << entry.item << endl;
+				}
+				else {
+					timeArray.at(ARC_POS).at(index) += DIK_ACC_TIME;
+					//oFileFPCMiss << accache.getAcc() << "," << entry.item << endl;
+				}//模拟访问
+				/*****************************************************************/
+				if (random.access(entry)) {
+					timeArray.at(RR_POS).at(index) += MEM_ACC_TIME;
+					//oFileFPCHit << random.stateACC() << "," << entry.item << endl;
+				}
+				else {
+					timeArray.at(RR_POS).at(index) += DIK_ACC_TIME;
+					//oFileFPCMiss << random.stateACC() << "," << entry.item << endl;
+				}//模拟访问
+				/*****************************************************************/
+				if (lirsCache.access(entry)) {
+					timeArray.at(LIRS_POS).at(index) += MEM_ACC_TIME;
+					//oFileFPCHit << lirsCache.getAcc() << "," << entry.item << endl;
+				}
+				else {
+					timeArray.at(LIRS_POS).at(index) += DIK_ACC_TIME;
+					//oFileFPCMiss << lirsCache.getAcc() << "," << entry.item << endl;
+				}//模拟访问
+				/*****************************************************************/
+				if (lrukCache.access(entry)) {
+					timeArray.at(LRUK_POS).at(index) += MEM_ACC_TIME;
+					//oFileLRUKHit << lrukCache.getAcc() << "," << entry.item << endl;
 
+				}
+				else {
+					timeArray.at(LRUK_POS).at(index) += DIK_ACC_TIME;
+					//oFileLRUKMiss << lrukCache.getAcc() << "," << entry.item << endl;
+				}//模拟访问
+				/*****************************************************************/
+				if (lfuCache.access(entry)) {
+					timeArray.at(LFU_POS).at(index) += MEM_ACC_TIME;
+					//oFileLRUKHit << lfuCache.getAcc() << "," << entry.item << endl;
+
+				}
+				else {
+					timeArray.at(LFU_POS).at(index) += DIK_ACC_TIME;
+					//oFileLRUKMiss << lfuCache.getAcc() << "," << entry.item << endl;
+				}//模拟访问
+				/*****************************************************************/
 				recordcounter++;
 				if (recordcounter == RECORDE_STEP)
 				{
@@ -199,6 +271,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 						<< ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100 << ","
 						<< ((float)(random.stateHIT() - RRlast.lastStateHit)) / ((random.stateACC() - RRlast.lastStateAcc)) * 100 << ","
 						<< ((float)(accache.getHit() - ARClast.lastStateHit)) / ((accache.getAcc() - ARClast.lastStateAcc)) * 100 << ","
+						<< ((float)(lirsCache.getHit() - LIRSlast.lastStateHit)) / ((lirsCache.getAcc() - LIRSlast.lastStateAcc)) * 100 << ","
+						<< ((float)(lrukCache.getHit() - LRUKlast.lastStateHit)) / ((lrukCache.getAcc() - LRUKlast.lastStateAcc)) * 100 << ","
+						<< ((float)(lfuCache.getHit() - LFUlast.lastStateHit)) / ((lfuCache.getAcc() - LFUlast.lastStateAcc)) * 100 << ","
 						<< ((float)(fpcahe.stateHIT() - FPClast.lastStateHit)) / (fpcahe.stateACC() - FPClast.lastStateAcc) * 100 - ((float)(lru.stateHIT() - LRUlast.lastStateHit)) / ((lru.stateACC() - LRUlast.lastStateAcc)) * 100
 						<< endl;
 					oFile.close();
@@ -214,6 +289,16 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 					ARClast.lastStateAcc = accache.getAcc();
 					ARClast.lastStateHit = accache.getHit();
 					ARClast.lastStateMis = accache.getMis();
+					LIRSlast.lastStateAcc = lirsCache.getAcc();
+					LIRSlast.lastStateHit = lirsCache.getHit();
+					LIRSlast.lastStateMis = lirsCache.getMis();
+					LRUKlast.lastStateAcc = lrukCache.getAcc();
+					LRUKlast.lastStateHit = lrukCache.getHit();
+					LRUKlast.lastStateMis = lrukCache.getMis();
+					LFUlast.lastStateAcc = lfuCache.getAcc();
+					LFUlast.lastStateHit = lfuCache.getHit();
+					LFUlast.lastStateMis = lfuCache.getMis();
+					
 					recordcounter = 0;
 				}
 
@@ -238,11 +323,27 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 					slice.erase(slice.begin() + index);
 					//slice.shrink_to_fit();
 					tempslice.erase(tempslice.begin() + index);
+
+					fpcahe.timeINC(timeArray.at(FPC_POS).at(index)); fpcahe.seqnumINC();
+					accache.timeINC(timeArray.at(ARC_POS).at(index)); accache.seqnumINC();
+					lru.timeINC(timeArray.at(LRU_POS).at(index)); lru.seqnumINC();
+					random.timeINC(timeArray.at(RR_POS).at(index)); random.seqnumINC();
+					lirsCache.timeINC(timeArray.at(LIRS_POS).at(index)); lirsCache.seqnumINC();
+					lrukCache.timeINC(timeArray.at(LRUK_POS).at(index)); lrukCache.seqnumINC();
+					lfuCache.timeINC(timeArray.at(LFU_POS).at(index)); lfuCache.seqnumINC();
+					for (size_t i = 0; i < C_NUM; i++)
+					{
+						timeArray.at(i).erase(timeArray.at(i).begin() + index);
+					}
 					//添加一个事务进入slice
 					if (temptrans.size() > 0) {
 						std::vector<Transaction>::iterator beginIt = temptrans.begin();
 						int idx = radmGen(0, temptrans.size() - 1, 1);
 						slice.push_back(temptrans.at(idx));
+						for (size_t i = 0; i < C_NUM; i++)
+						{
+							timeArray.at(i).push_back(0);
+						}
 						tempslice.push_back(temptrans.at(idx));
 						std::vector<Transaction>::iterator it = beginIt + idx;
 						temptrans.erase(it);
@@ -256,6 +357,9 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 						DWORD StartTime = ::GetTickCount();
 						fpcahe.setMinSupport(ceil(fpcahe.getMinSupportWet()*(M*rate + samplingTrans.size()) / 2));
 						fpcahe.runFPAnalyse(samplingTrans, patterns);
+						int sizeofpatterns = patterns.size();
+						DWORD EndTime = ::GetTickCount();
+						DWORD runtime = EndTime - StartTime;
 						//fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 						/*fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns);
 						fpcahe.sortPatternsByDensity(sortedPatterns, valuatedpatterns);*/
@@ -265,12 +369,18 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						case 2:
+							StartTime = ::GetTickCount();
 							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
+							EndTime = ::GetTickCount();
+							runtime+= EndTime - StartTime;
 							fpcahe.sortPatternsByDensity(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						case 3:
+							StartTime = ::GetTickCount();
 							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
-							fpcahe.sortPatternsByVal(sortedPatterns, valuatedpatterns);
+							EndTime = ::GetTickCount();
+							runtime += EndTime - StartTime;
+							fpcahe.sortPatternsByVal(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						default:
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
@@ -280,31 +390,42 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 						fpcahe.procPattern(sortedPatterns, valuatedpatterns2, hashtable, fpcahe.getHighCorrCache().getShadowCache(), fpcahe.getLowCorrCache().getShadowCache());
 						fpcahe.cacheOrganize(hashtable);
 						resetMetaAccnum(hashtable,olddisWei,newdisWei);
-						DWORD EndTime = ::GetTickCount();
-						cout << streamNO << ":" << recordcounter << "	*耗时" << EndTime - StartTime << "ms" << "	number of filted Patterns " << sortedPatterns.size() << endl;
+						
+						cout << streamNO << ":" << recordcounter << "	*耗时" << runtime << "ms" <<"	"<< sizeofpatterns <<"/"<< sortedPatterns.size() << endl;
+						oFileInfo.open("Info_" + outputfile, ios::out | ios::app);
+						oFileInfo<< runtime << "," << sortedPatterns.size() << endl;
+						oFileInfo.close();
 						/***********************************************************/
 
-						cout << "FPC:	ACC:" << fpcahe.stateACC()
+						cout << "FPC:	avgtime:"<< fpcahe .getAvgtime()<<"	ACC:" << fpcahe.stateACC()
 							<< " HIT:" << fpcahe.stateHIT()
-							<< " FAULT:" << fpcahe.stateFault()
+							//<< " FAULT:" << fpcahe.stateFault()
 							<< "	hit ratio:" << ((float)(fpcahe.stateHIT())) / (fpcahe.stateACC()) * 100 << "%	"
 							<< fpcahe.getHighCorrCache().getCacheSize() << "/" << fpcahe.getHighCorrCache().getMaxSize() << "(" << fpcahe.getHighItemNum() << ")"
 							<< "	sample num:" << samplingTrans.size()
 							<< "	【" << ((double)finishedCounter / totalsize) * 100 << "%】" << endl;
-						cout << "LRU:	ACC:" << lru.stateACC()
+						cout << "LRU:	avgtime:" << lru.getAvgtime() << "	ACC:" << lru.stateACC()
 							<< " HIT:" << lru.stateHIT()
-							<< " FAULT:" << lru.stateFault()
+							//<< " FAULT:" << lru.stateFault()
 							<< "	hit ratio:" << ((float)(lru.stateHIT())) / ((lru.stateACC())) * 100 << "%" 
 							<< "	delta:" << ((float)(fpcahe.stateHIT())) / (fpcahe.stateACC()) * 100- ((float)(lru.stateHIT())) / ((lru.stateACC())) * 100<<"%" << endl;
-						cout << "RR :	ACC:" << random.stateACC()
+						cout << "RR :	avgtime:" << random.getAvgtime() << "	ACC:" << random.stateACC()
 							<< " HIT:" << random.stateHIT()
-							<< " FAULT:" << random.stateFault()
+							//<< " FAULT:" << random.stateFault()
 							<< "	hit ratio:" << ((float)(random.stateHIT())) / ((random.stateACC())) * 100 << "%"
 							<< "	delta:" << ((float)(fpcahe.stateHIT())) / (fpcahe.stateACC()) * 100 - ((float)(random.stateHIT())) / ((random.stateACC())) * 100 << "%" << endl;
-						cout << "ARC:	ACC:" << accache.getAcc()
-							<< " HIT:" << accache.getHit()
-							<< " FAULT:" << accache.getMis()
-							<< "	hit ratio:" << ((float)(accache.getHit()) / (accache.getAcc())) * 100 << "%" << endl;
+						cout << "ARC:	avgtime:" << accache.getAvgtime()<<" "; accache.getHitRatio();
+						cout << "LIRS:	avgtime:" << lirsCache.getAvgtime() << " "; lirsCache.getHitRatio();
+						cout << "LRUK::	avgtime:" << lrukCache.getAvgtime() << " "; lrukCache.getHitRatio();
+						cout << "LFU::	avgtime:" << lfuCache.getAvgtime() << " "; lfuCache.getHitRatio();
+						fpcahe.restAvgtime();
+						lru.restAvgtime();
+						random.restAvgtime();
+						accache.restAvgtime();
+						lirsCache.restAvgtime();
+						lrukCache.restAvgtime();
+						lfuCache.restAvgtime();
+						//cout << "MQ:	"; mqCache.getHitRatio();
 						cout << endl;
 						samplingTrans.clear();
 						continue;
@@ -313,8 +434,10 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache,RR&random,
 			}
 		}
 	}
-	oFileHit.close();
-	oFileMiss.close();
+	//oFileFPCHit.close();
+	//oFileFPCMiss.close();
+	//oFileLRUKHit.close();
+	//oFileLRUKMiss.close();
 }
 
 void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
@@ -338,6 +461,8 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 	std::vector<Transaction> samplingTrans;
 	std::vector<Transaction> slice;
 	std::vector<Transaction> tempslice;
+
+
 	int finishedCounter = 0;
 	int totalsize = transactions.size();
 	int sliceCounter = 0;
@@ -422,7 +547,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 				if ((skew_jump_low <= finishedCounter) && (skew_jump_high >= finishedCounter)){
 					lru.access(entry);//模拟访问
 					fpcahe.access(entry);//模拟访问
-					accache.ARCreference(entry);
+					accache.access(entry);
 					random.access(entry);
 					//hashtable[slice.at(index).at(itmIndex)].dis = 0;
 					
@@ -430,7 +555,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 				else {
 					lru.access(entry);
 					fpcahe.access(entry);//模拟访问
-					accache.ARCreference(entry);
+					accache.access(entry);
 					random.access(entry);
 				}
 
@@ -532,7 +657,7 @@ void uniAccess(LRUStack& lru, FPCache&fpcahe, ARCCache&accache, RR&random,
 							break;
 						case 3://type3使用value作为调入指标
 							fpcahe.valuatePatterns(patterns, hashtable, valuatedpatterns, valuatedpatterns2);
-							fpcahe.sortPatternsByVal(sortedPatterns, valuatedpatterns);
+							fpcahe.sortPatternsByVal(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						default:
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
@@ -658,7 +783,14 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 					hashtable[item].lastdis = hashtable[item].weidis;
 					hashtable[item].lastacc = lru.stateACC();
 				}
-
+				if (item == "333") {
+					std::ostringstream buffer;
+					buffer << newdis;
+					string str = buffer.str();
+					oFile.open("trace_"+ str +"_333.csv", ios::out | ios::app);
+					oFile << hashtable[item].weidis<<","<< hashtable[item].dis << endl;
+					oFile.close();
+				}
 				Entry entry;
 				entry.item = item;
 				entry.size = hashtable[item].size;
@@ -725,8 +857,19 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 						if (spyTran.first.size() == 0)
 						{
 							int idx = radmGen(0, valuatedpatterns.size() - 1, 1);
+							double min = 0.0;
 							auto its = valuatedpatterns.begin();
-							spyTran=(*(its+idx));
+							auto temp = its;
+							min = its->second.val;
+							while (its != valuatedpatterns.end()) {
+								if (min> its->second.val)
+								{
+									min = its->second.val;
+									temp = its;
+								}
+								its++;
+							}
+							spyTran=(*(temp));
 						}
 						else 
 						{
@@ -867,13 +1010,13 @@ void uniAccess(LRUStack & lru, FPCache&fpcahe, std::vector<Transaction>& transac
 							fpcahe.sortPatternsByDensity(sortedPatterns, hashtable, valuatedpatterns);
 							break;
 						case 3:
-							fpcahe.sortPatternsByVal(sortedPatterns, valuatedpatterns);
+							fpcahe.sortPatternsByVal(sortedPatterns, hashtable, valuatedpatterns);
 							break; 
 						default:
 							fpcahe.sortPatternsBySup(sortedPatterns, patterns);
 							break;
 						}
-						resetMetaAccnum(hashtable, olddis, newdis);
+						//resetMetaAccnum(hashtable, olddis, newdis);
 						DWORD EndTime = ::GetTickCount();
 						cout << streamNO << ":" << recordcounter << "	*耗时" << EndTime - StartTime << "ms" << "	number of filted Patterns " << sortedPatterns.size() << endl;
 						/***********************************************************/

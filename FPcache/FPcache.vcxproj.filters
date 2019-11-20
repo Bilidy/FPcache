@@ -48,6 +48,21 @@
     <ClCompile Include="lowCache.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="LIRSCache.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MQCache.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LRUKCache.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LFUCache.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fpcache.hpp">
@@ -81,6 +96,42 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="lowCache.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="arc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="lirs.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mq.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="lru.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LIRSCache.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MQCache.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LRUKCache.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="lru_K.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="defs.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="lfu.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LFUCache.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

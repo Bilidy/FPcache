@@ -60,24 +60,24 @@ uint64_t RR::getItemNumber()
 	return cache.getItemNum();
 }
 
-void RR::access(Entry entry)
+bool RR::access(Entry entry)
 {
 	ACC_NUM++;
 	if (find(entry))
 	{
 		HIT_NUM++;
-		return;
+		return true;
 	}
 	else
 	{
 		PAGE_FAULT_NUM++;
 		while (!isEnough(entry))
 		{
-			if(!evict(1))return;
+			if(!evict(1))return false;
 		}
 		cache.inseart(entry);
 	}
-	return;
+	return false;
 }
 
 uint64_t RR::stateACC()
@@ -110,4 +110,26 @@ bool RR::evict(uint64_t num)
 			return false;
 	}
 	return true;
+}
+void RR::timeINC(uint64_t t)
+{
+	time += t;
+}
+
+void RR::seqnumINC()
+{
+	seqnum++;
+}
+
+uint64_t RR::getAvgtime()
+{
+
+	return time / seqnum;
+}
+
+void RR::restAvgtime()
+{
+	time = 0;
+	seqnum = 0;
+	avgtime = 0;
 }

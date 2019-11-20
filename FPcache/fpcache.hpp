@@ -19,6 +19,10 @@ private:
 	uint64_t HIT_NUM;
 	uint64_t PAGE_FAULT_NUM;
 
+	uint64_t time = 0;
+	uint64_t seqnum = 0;
+	uint64_t avgtime = 0;
+
 	fpCache highCorrCache;
 	lowCache lowCorrCache;
 	LRUStack lruCache;
@@ -58,7 +62,7 @@ public:
 	
 	void sortPatternsBySup(std::vector<Pattern>& sortedPatterns, std::set<Pattern>& patterns);
 	void sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::map<Item, metadata> &metadata_hashtable, std::vector<valuatedPattern>& patterns);
-	void sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns);
+	void sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::map<Item, metadata>& metadata_hashtable, std::vector<valuatedPattern>& patterns);
 	//void sortPatternsBySup(std::vector<Pattern>& sortedPatterns,std::set<Pattern>& patterns);
 
 	//input:fp pattern 
@@ -118,6 +122,11 @@ public:
 	uint64_t stateHIT();
 
 	uint64_t stateFault();
+
+	void timeINC(uint64_t t);
+	void seqnumINC();
+	uint64_t getAvgtime();
+	void restAvgtime();
 
 
 

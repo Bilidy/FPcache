@@ -203,10 +203,10 @@ void FPCache::sortPatternsByDensity(std::vector<Pattern>& sortedPatterns, std::m
 		//ря╫Б╬Ж
 	}
 }
-void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vector<valuatedPattern>& patterns)
+void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::map<Item, metadata>& metadata_hashtable, std::vector<valuatedPattern>& patterns)
 {
 	sortedPatterns.clear();
-	double MaxValue;
+	double MinValue;
 	Pattern tempTrans;
 
 	shadowCache tempScache;
@@ -216,17 +216,17 @@ void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vecto
 	while (patterns.size() && (sizesum < highCorrCache.getMaxCacheSize()))
 	{
 
-		MaxValue = 0.0;
+		MinValue = 5.0;
 		auto tempit = patterns.end();
 		auto it = patterns.begin();
 		while (it != patterns.end())
 		{
-			if ((*it).second.val >= MaxValue)
+			if ((*it).second.val <= MinValue)
 			{
 				tempit = it;
 				tempTrans.first = (*it).first;
 				tempTrans.second = (*it).second.val;
-				MaxValue = (*it).second.val;
+				MinValue = (*it).second.val;
 			}
 			it++;
 		}
@@ -238,7 +238,7 @@ void FPCache::sortPatternsByVal(std::vector<Pattern>& sortedPatterns, std::vecto
 			{
 				if (tempScache.find(*its) == tempScache.end()) {
 					tempScache.insert(std::pair<Item, uint64_t>((*its), 0));
-					sizesum += tempit->second.size;
+					sizesum += metadata_hashtable[*its].size;
 				}
 				its++;
 			}
@@ -525,5 +525,28 @@ uint64_t FPCache::stateHIT()
 uint64_t FPCache::stateFault()
 {
 	return PAGE_FAULT_NUM + lruCache.stateFault();
+}
+
+void FPCache::timeINC(uint64_t t)
+{
+	time += t;
+}
+
+void FPCache::seqnumINC()
+{
+	seqnum++;
+}
+
+uint64_t FPCache::getAvgtime()
+{
+
+	return time / seqnum;
+}
+
+void FPCache::restAvgtime()
+{
+	time = 0;
+	seqnum = 0;
+	avgtime = 0;
 }
 

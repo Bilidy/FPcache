@@ -10,12 +10,17 @@ public:
 	void setMaxCacheSize(uint64_t maxcachesize);
 	uint64_t size();
 	uint64_t getItemNumber();
-	void access(Entry entry);
+	bool access(Entry entry);
 
 	uint64_t stateACC();
 	uint64_t stateHIT();
 	uint64_t stateFault();
 	void stateReset();
+
+	void timeINC(uint64_t t);
+	void seqnumINC();
+	uint64_t getAvgtime();
+	void restAvgtime();
 
 	RR(uint64_t size);
 	~RR();
@@ -30,6 +35,11 @@ private:
 	uint64_t sizeInByte;
 	uint64_t itemNum;
 	LRUStack cache;
+
+	uint64_t time = 0;
+	uint64_t seqnum = 0;
+	uint64_t avgtime = 0;
+
 	friend std::ostream& operator<<(std::ostream&os, RR&rr) {
 		os << "RR :	ACC:" << rr.stateACC()
 			<< " HIT:" << rr.stateHIT()

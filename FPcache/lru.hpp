@@ -46,6 +46,10 @@ private:
 	size_t maxsize;//最大大小限制
 	size_t stacksize;
 
+	uint64_t time = 0;
+	uint64_t seqnum = 0;
+	uint64_t avgtime = 0;
+
 	LRUItem* root;//头指针交于智能指针托管
 	LRUItem* tail;//尾指针
 	std::map<Item, LRUItem*> ptrvec;	
@@ -63,6 +67,11 @@ public:
 	uint64_t stateACC();
 	uint64_t stateHIT();
 	uint64_t stateFault();
+	void restAvgtime();
+
+	void timeINC(uint64_t t);
+	void seqnumINC();
+	uint64_t getAvgtime();
 
 	void flush();
 
